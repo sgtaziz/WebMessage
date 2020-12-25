@@ -4,12 +4,33 @@
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build"
+    "build": "vue-cli-service build",
+    "electron:build": "vue-cli-service electron:build",
+    "electron:serve": "vue-cli-service electron:serve",
+    "postinstall": "electron-builder install-app-deps",
+    "postuninstall": "electron-builder install-app-deps"
   },
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/sgtaziz/WebMessage.git"
+  },
+  "main": "background.js",
   "dependencies": {
+    "@kevinfaguiar/vue-twemoji-picker": "^5.7.4",
+    "@trevoreyre/autocomplete-vue": "^2.2.0",
+    "axios": "^0.21.0",
     "core-js": "^3.6.5",
+    "electron-context-menu": "^2.3.1",
+    "electron-store": "^6.0.1",
+    "feather-icons": "^4.28.0",
+    "moment": "^2.29.1",
+    "simplebar": "^5.3.0",
+    "simplebar-vue": "^1.6.0",
     "vue": "^2.6.11",
+    "vue-feather": "^1.1.1",
+    "vue-native-websocket": "^2.0.14",
     "vue-router": "^3.2.0",
+    "vue-twemoji": "^1.0.1",
     "vuex": "^3.4.0"
   },
   "devDependencies": {
@@ -17,8 +38,11 @@
     "@vue/cli-plugin-router": "~4.5.0",
     "@vue/cli-plugin-vuex": "~4.5.0",
     "@vue/cli-service": "~4.5.0",
+    "electron": "^9.0.0",
     "node-sass": "^4.12.0",
     "sass-loader": "^8.0.2",
+    "vue-cli-plugin-electron-builder": "~2.0.0-rc.5",
+    "vue-devtools": "^5.1.4",
     "vue-template-compiler": "^2.6.11"
   }
 }
