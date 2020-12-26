@@ -1,10 +1,13 @@
 'use strict'
 
-import { app, protocol, BrowserWindow } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path')
 const contextMenu = require('electron-context-menu');
+const { autoUpdater } = require('electron-updater');
+autoUpdater.logger = require("electron-log")
+autoUpdater.logger.transports.file.level = "info"
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -30,9 +33,10 @@ async function createWindow() {
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       // nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       nodeIntegration: true,
-      preload: path.join(__dirname, '../src/preload.js'),
+      preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: true
-    }
+    },
+    icon: path.join(__static, 'icon.png')
   })
 
   win.minimizedState = true;
@@ -46,6 +50,15 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+
+
+  autoUpdater.on('update-available', () => {
+    win.webContents.send('update_available')
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    win.webContents.send('update_downloaded')
+  })
 }
 
 // Quit when all windows are closed.
@@ -99,3 +112,18 @@ if (isDevelopment) {
 }
 
 app.commandLine.appendSwitch('ignore-certificate-errors', 'true')
+
+ipcMain.on('loaded', (event) => {
+  console.log('Running auto updater...')
+  autoUpdater.checkForUpdatesAndNotify()
+})
+
+ipcMain.on('app_version', (event) => {
+  event.sender.send('app_version', { version: app.getVersion() })
+})
+
+ipcMain.on('restart_app', () => {
+  setImmediate(() => {
+    autoUpdater.quitAndInstall()
+  })
+})

@@ -18,7 +18,10 @@
           <feather type="settings" stroke="rgba(152,152,152,0.5)" size="20" @click="$refs.settingsModal.openModal()"></feather>
         </div>
         <div class="menuBtn">
-          <feather type="edit" stroke="rgba(152,152,152,0.5)" size="20" @click="composeMessage"></feather>
+          <feather type="edit" stroke="rgba(36,132,255,0.65)" size="20" @click="composeMessage"></feather>
+        </div>
+        <div class="menuBtn" v-if="updateAvailable">
+          <feather type="download" stroke="rgba(152,255,152,0.65)" size="20" @click="restart"></feather>
         </div>
       </div>
       <div class="searchContainer">
@@ -60,7 +63,8 @@ export default {
       limit: 25,
       offset: 0,
       loading: false,
-      notifSound: new Audio(process.env.BASE_URL+'receivedText.mp3')
+      notifSound: new Audio(process.env.BASE_URL+'receivedText.mp3'),
+      updateAvailable: false
     }
   },
   methods: {
@@ -76,6 +80,9 @@ export default {
     maximizeWindow () {
       const window = this.getWindow()
       !window.minimizedState ? window.unmaximize() : window.maximize()
+    },
+    restart () {
+      ipcRenderer.send('restart_app')
     },
     requestChats (clear) {
       if (this.$socket && this.$socket.readyState == 1) {
@@ -115,6 +122,19 @@ export default {
         this.requestChats()
       }
     })
+
+    ipcRenderer.send('loaded')
+
+    ipcRenderer.on('update_available', () => {
+      ipcRenderer.removeAllListeners('update_available')
+      console.log('Update detected. Downloading...')
+    })
+
+    ipcRenderer.on('update_downloaded', () => {
+      ipcRenderer.removeAllListeners('update_downloaded')
+      console.log('Update downloaded. Waiting on user to restart.')
+      this.updateAvailable = true
+    })
   },
   socket: {
     fetchChats (data) {
@@ -146,7 +166,14 @@ export default {
         }
 
         this.notifSound.play()
-        new remote.Notification(notification).show()
+        let notif = new remote.Notification(notification)
+        notif.on('click', (event, arg) => {
+          if (chatData && chatData.id) {
+            this.$router.push('/message/'+chatData.id)
+          }
+        })
+        notif.show()
+
       } else if (!remote.Notification.isSupported()) {
         console.log('Notifications are not supported on this system.')
       }
@@ -185,7 +212,7 @@ export default {
     cursor: pointer;
 
     &:hover {
-      stroke: lighten(rgba(152,152,152,0.5), 20%);
+      filter: brightness(80%);
     }
   }
 }

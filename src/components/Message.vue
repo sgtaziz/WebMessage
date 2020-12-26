@@ -15,33 +15,35 @@
     </div>
     <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
       <simplebar class="messages" ref="messages" data-simplebar-auto-hide="false">
-        <template v-for="(msg, i) in sortedMessages" :id="msg.id">
+        <div v-for="(msg, i) in sortedMessages" :id="msg.id" :key="msg.id">
           <div class="timegroup" v-html="dateGroup(i-1, i)"></div>
 
           <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
             <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
-            <template v-for="(text, i) in msg.texts">
-              <div v-if="msg.attachments && msg.attachments.length > 0" v-for="(attachment, index) in msg.attachments" :key="`${i}-${index}`" class="attachment">
+            <template v-if="msg.attachments && msg.attachments.length > 0">
+              <div v-for="(attachment, index) in msg.attachments" :key="`${i}-${index}`" class="attachment">
                 <img v-if="isImage(attachment[1])"
                 :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(attachment[0])}&type=${attachment[1]}&auth=${$store.state.password}`"
                 @load="scrollToBottom" />
 
                 <video v-else-if="isVideo(attachment[1])" controls width="100%" @loadeddata="scrollToBottom">
                   <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(attachment[0])}&type=${attachment[1]}&auth=${$store.state.password}`"
-                    :type="attachment[1].includes('quicktime') ? 'video/mp4' : attachment[1]">
+                    :type="attachment[1].includes('quicktime') ? 'video/mp4' : attachment[1]" />
                     This video type is not supported.
                 </video>
               </div>
+            </template>
+            <template v-for="(text, i) in msg.texts">
               <div
-              class="message"
-              :key="i"
-              :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
-              v-if="$options.filters.twemoji(text.text) != ''">
+                class="message"
+                :key="i"
+                :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
+                v-if="$options.filters.twemoji(text.text) != ''">
                 <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)"></span>
               </div>
             </template>
           </div>
-        </template>
+        </div>
       </simplebar>
 
       <div class="textboxContainer">

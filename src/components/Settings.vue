@@ -16,6 +16,10 @@
         </label>
         <a class="btn" v-on:click="saveModal">Save</a>
         <a v-on:click="closeModal" class="btn destructive">Cancel</a>
+
+        <div class="version">
+          v{{version}}
+        </div>
       </div>
     </div>
   </transition>
@@ -30,7 +34,8 @@ export default {
       password: '',
       ip: '',
       port: null,
-      ssl: false
+      ssl: false,
+      version: ''
     }
   },
   methods: {
@@ -70,12 +75,23 @@ export default {
   },
   mounted () {
     this.loadValues()
+
+    ipcRenderer.send('app_version')
+    ipcRenderer.on('app_version', (event, arg) => {
+      ipcRenderer.removeAllListeners('app_version')
+      this.version = arg.version
+    })
   }
 }
 </script>
 
 
 <style lang="scss" scoped>
+.version {
+  font-size: 12px;
+  margin-bottom: -18px;
+  color: gray;
+}
 .modal {
   overflow: hidden;
   position: fixed;
