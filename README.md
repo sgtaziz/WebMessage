@@ -2,6 +2,7 @@
 A messaging client, meant to work with the WebMessage tweak for jailbroken iOS devices.
 
 ## Project setup
+### Installs required dependencies 
 ```
 yarn install
 ```
