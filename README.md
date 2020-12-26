@@ -12,7 +12,7 @@ yarn install
 yarn serve
 ```
 
-### Compiles and minifies for production
+### Compiles and bundles for production
 ```
 yarn build
 ```
