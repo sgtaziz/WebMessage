@@ -1,4 +1,5 @@
-# webmessage
+# WebMessage
+A messaging client, meant to work with the WebMessage tweak for jailbroken iOS devices.
 
 ## Project setup
 ```
@@ -14,6 +15,3 @@ yarn serve
 ```
 yarn build
 ```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
