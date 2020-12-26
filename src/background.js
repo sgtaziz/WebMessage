@@ -6,8 +6,6 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path')
 const contextMenu = require('electron-context-menu');
 const { autoUpdater } = require('electron-updater');
-autoUpdater.logger = require("electron-log")
-autoUpdater.logger.transports.file.level = "info"
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -45,6 +43,10 @@ async function createWindow() {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
     if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
+
+    //Log autoUpdater in development
+    autoUpdater.logger = require("electron-log")
+    autoUpdater.logger.transports.file.level = "info"
   } else {
     createProtocol('app')
     // Load the index.html when not in development
@@ -90,6 +92,9 @@ app.on('ready', async () => {
   }
 
   if (process.env.NODE_ENV !== 'production') {
+    // A directory named 'vender' in the project root
+    // is required for this to work. The correct file
+    // can be found within the vue-devtools project.
     require('vue-devtools').install()
   }
 
