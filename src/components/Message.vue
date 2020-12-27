@@ -187,6 +187,8 @@ export default {
           this.autoCompleteInput(input.value)
         }
       }
+
+      this.$nextTick(this.autoCompleteHooks)
     },
     isEmojis(msgText) {
       const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}/gu
@@ -295,7 +297,7 @@ export default {
     }
   },
   mounted () {
-    this.autoCompleteHooks()
+    this.$nextTick(this.autoCompleteHooks)
     this.fetchMessages()
   },
   socket: {
@@ -343,6 +345,7 @@ export default {
         }
         return
       }
+
       if (Object.keys(message).length == 0) {
         console.log("Received a message, but content was empty.")
       } else {

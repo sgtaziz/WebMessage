@@ -25,10 +25,10 @@
         </div>
       </div>
       <div class="searchContainer">
-        <input type="search" placeholder="Search" class="textinput" />
+        <input type="search" placeholder="Search" class="textinput" v-model="search" />
       </div>
       <simplebar class="chats" ref="chats" data-simplebar-auto-hide="false">
-        <chat v-for="chat in chats" :key="chat.id" :chatid="chat.id"
+        <chat v-for="chat in filteredChats" :key="chat.id" :chatid="chat.id"
           :author="chat.author"
           :text="chat.text"
           :date="chat.date"
@@ -60,11 +60,19 @@ export default {
   data: function () {
     return {
       chats: [],
-      limit: 25,
+      limit: 50,
       offset: 0,
       loading: false,
       notifSound: null,
-      updateAvailable: false
+      updateAvailable: false,
+      search: ''
+    }
+  },
+  computed: {
+    filteredChats() {
+      return this.chats.filter((chat) => {
+        return chat.author.toLowerCase().includes(this.search.toLowerCase()) || chat.text.toLowerCase().includes(this.search.toLowerCase())
+      })
     }
   },
   methods: {
