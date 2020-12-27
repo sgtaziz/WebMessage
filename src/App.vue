@@ -46,7 +46,7 @@
 
 <script>
 import Chat from './components/Chat.vue'
-import Settings from "./components/Settings.vue";
+import Settings from "./components/Settings.vue"
 import simplebar from 'simplebar-vue'
 import 'simplebar/dist/simplebar.css'
 
@@ -63,7 +63,7 @@ export default {
       limit: 25,
       offset: 0,
       loading: false,
-      notifSound: new Audio(process.env.BASE_URL+'receivedText.mp3'),
+      notifSound: null,
       updateAvailable: false
     }
   },
@@ -72,7 +72,11 @@ export default {
       return window.remote.BrowserWindow.getFocusedWindow()
     },
     closeWindow () {
-      this.getWindow().close()
+      if (this.$store.state.minimize) {
+        ipcRenderer.send('minimizeToTray')
+      } else {
+        ipcRenderer.send('quitApp')
+      }
     },
     minimizeWindow () {
       this.getWindow().minimize()
@@ -135,6 +139,8 @@ export default {
       console.log('Update downloaded. Waiting on user to restart.')
       this.updateAvailable = true
     })
+
+    this.notifSound = new Audio('wm-audio://receivedText.mp3')
   },
   socket: {
     fetchChats (data) {
@@ -169,6 +175,7 @@ export default {
         let notif = new remote.Notification(notification)
         notif.on('click', (event, arg) => {
           if (chatData && chatData.id) {
+            ipcRenderer.send('show_win')
             this.$router.push('/message/'+chatData.id)
           }
         })

@@ -8,10 +8,12 @@ const persistentStore = new Store()
 
 export default new Vuex.Store({
   state: {
-    password: persistentStore.get('password') || "",
-    ipAddress: persistentStore.get('ipAddress') || "",
-    port: persistentStore.get('port') || 8180,
-    ssl: persistentStore.get('ssl') || true
+    password: persistentStore.get('password', ''),
+    ipAddress: persistentStore.get('ipAddress', ''),
+    port: persistentStore.get('port', 8180),
+    ssl: persistentStore.get('ssl', true),
+    startup: persistentStore.get('startup', false),
+    minimize: persistentStore.get('minimize', true)
   },
   mutations: {
     setPassword(state, password) {
@@ -29,6 +31,15 @@ export default new Vuex.Store({
     setSSL(state, ssl) {
       state['ssl'] = ssl
       persistentStore.set('ssl', ssl)
+    },
+    setStartup(state, startup) {
+      state['startup'] = startup
+      persistentStore.set('startup', startup)
+      ipcRenderer.send('startup_check')
+    },
+    setMinimize(state, minimize) {
+      state['minimize'] = minimize
+      persistentStore.set('minimize', minimize)
     }
   },
   getters: {

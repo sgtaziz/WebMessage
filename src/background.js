@@ -1,11 +1,21 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path')
-const contextMenu = require('electron-context-menu');
-const { autoUpdater } = require('electron-updater');
+const contextMenu = require('electron-context-menu')
+const { autoUpdater } = require('electron-updater')
+const Store = require('electron-store')
+const AutoLaunch = require('auto-launch')
+
+const persistentStore = new Store()
+const autoLauncher = new AutoLaunch({
+    name: "WebMessage"
+})
+
+let tray = null
+let win = null
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -15,11 +25,11 @@ protocol.registerSchemesAsPrivileged([
 contextMenu({
 	prepend: (defaultActions, params, browserWindow) => [
 	]
-});
+})
 
 async function createWindow() {
   // Create the browser window.
-  const win = new BrowserWindow({
+  win = new BrowserWindow({
     width: 800,
     height: 600,
     minWidth: 700,
@@ -37,12 +47,12 @@ async function createWindow() {
     icon: path.join(__static, 'icon.png')
   })
 
-  win.minimizedState = true;
+  win.minimizedState = true
 
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
+    //if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
 
     //Log autoUpdater in development
     autoUpdater.logger = require("electron-log")
@@ -53,6 +63,9 @@ async function createWindow() {
     win.loadURL('app://./index.html')
   }
 
+  win.on('restore', () => {
+    showWin()
+  })
 
   autoUpdater.on('update-available', () => {
     win.webContents.send('update_available')
@@ -76,6 +89,7 @@ app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) createWindow()
+  else if (win) showWin()
 })
 
 // This method will be called when Electron has finished
@@ -99,6 +113,7 @@ app.on('ready', async () => {
   }
 
   createWindow()
+  registerLocalAudioProtocol()
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -119,7 +134,7 @@ if (isDevelopment) {
 app.commandLine.appendSwitch('ignore-certificate-errors', 'true')
 
 ipcMain.on('loaded', (event) => {
-  console.log('Running auto updater...')
+  console.log('Checking for updates...')
   autoUpdater.checkForUpdatesAndNotify()
 })
 
@@ -132,3 +147,81 @@ ipcMain.on('restart_app', () => {
     autoUpdater.quitAndInstall()
   })
 })
+
+ipcMain.on('startup_check', () => {
+  autoLauncher.isEnabled().then(function(isEnabled) {
+    let optionEnabled = persistentStore.get('startup', false)
+
+    if (optionEnabled && !isEnabled) {
+      autoLauncher.enable()
+    } else if (!optionEnabled && isEnabled) {
+      autoLauncher.disable()
+    }
+  }).catch(function (err) {
+    console.log("Could not detect autoLauncher settings:")
+    console.log(err)
+  })
+})
+
+ipcMain.on('minimizeToTray', () => {
+  win.setSkipTaskbar(true)
+  win.hide()
+  if (app.dock) app.dock.hide()
+})
+
+ipcMain.on('quitApp', () => {
+  app.isQuiting = true
+  app.quit()
+})
+
+ipcMain.on('show_win', () => {
+  showWin()
+})
+
+app.whenReady().then(() => {
+  tray = new Tray(path.join(__static, 'trayicon.png'))
+
+  const contextMenu = Menu.buildFromTemplate([
+    { label: 'Open WebMessage', click: () => {
+      showWin()
+    }},
+    { label: 'Quit', click: () => {
+      app.isQuiting = true
+      app.quit()
+    }}
+  ])
+
+  tray.on('double-click', () => {
+    showWin()
+  })
+
+  tray.setToolTip('WebMessage')
+  tray.setContextMenu(contextMenu)
+})
+
+function showWin () {
+  if (!win) createWindow()
+  else {
+    win.setSkipTaskbar(false)
+    win.show()
+  }
+  if (app.dock) app.dock.show()
+}
+
+// And this anywhere:
+function registerLocalAudioProtocol () {
+  protocol.registerFileProtocol('wm-audio', (request, callback) => {
+    const url = request.url.replace(/^wm-audio:\/\//, '')
+    // Decode URL to prevent errors when loading filenames with UTF-8 chars or chars like "#"
+    const decodedUrl = decodeURI(url) // Needed in case URL contains spaces
+    try {
+      // eslint-disable-next-line no-undef
+      return callback(path.join(__static, decodedUrl))
+    } catch (error) {
+      console.error(
+        'ERROR: registerLocalAudioProtocol: Could not get file path:',
+        error
+      )
+    }
+  })
+}

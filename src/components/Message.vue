@@ -111,14 +111,14 @@ export default {
       const groupAuthor = (author1, author2) => (author1 == author2)
 
       const groupedMessages = messages.reduce((r, { text, ...rest }, i, arr) => {
-        const prev = arr[i +-1];
+        const prev = arr[i +-1]
 
         if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date))
             r[r.length - 1].texts.unshift({ text: text.trim(), date: rest.date, attachments: rest.attachments })
         else
           r.push({ ...rest, texts: [{ text: text.trim(), date: rest.date, attachments: rest.attachments }] })
 
-        return r;
+        return r
       }, [])
 
       return groupedMessages.reverse()

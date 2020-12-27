@@ -4,15 +4,25 @@
       <div class="modal__backdrop" @click="closeModal()"/>
 
       <div class="modal__dialog">
-        <!-- <img src="https://upload.wikimedia.org/wikipedia/en/7/78/Apple_Mail.png?download" alt=""> -->
         <h3>Settings</h3>
         <input type="password" placeholder="Password" class="textinput" v-model="password" />
-        <input type="text" placeholder="IP Address" class="textinput" v-model="ip" />
+        <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" />
         <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
         <label class="switch">
-          <div>Enable SSL</div>
           <input type="checkbox" v-model="ssl">
           <i></i>
+          <div>Enable SSL</div>
+        </label>
+        <hr>
+        <label class="switch">
+          <input type="checkbox" v-model="startup">
+          <i></i>
+          <div>Launch on startup</div>
+        </label>
+        <label class="switch">
+          <input type="checkbox" v-model="minimize">
+          <i></i>
+          <div>Keep in tray</div>
         </label>
         <a class="btn" v-on:click="saveModal">Save</a>
         <a v-on:click="closeModal" class="btn destructive">Cancel</a>
@@ -32,18 +42,22 @@ export default {
     return {
       show: false,
       password: '',
-      ip: '',
+      ipAddress: '',
       port: null,
       ssl: false,
+      launchOnStartup: false,
+      minimize: true,
       version: ''
     }
   },
   methods: {
     saveModal() {
       this.$store.commit('setPassword', this.password)
-      this.$store.commit('setIPAddress', this.ip)
+      this.$store.commit('setIPAddress', this.ipAddress)
       this.$store.commit('setPort', this.port)
       this.$store.commit('setSSL', this.ssl)
+      this.$store.commit('setStartup', this.startup)
+      this.$store.commit('setMinimize', this.minimize)
       this.show = false
 
       this.$emit('saved')
@@ -53,13 +67,16 @@ export default {
       this.show = false
     },
     openModal() {
+      this.loadValues()
       this.show = true
     },
     loadValues() {
       this.password = this.$store.state.password
-      this.ip = this.$store.state.ipAddress
+      this.ipAddress = this.$store.state.ipAddress
       this.port = this.$store.state.port
       this.ssl = this.$store.state.ssl
+      this.startup = this.$store.state.startup
+      this.minimize = this.$store.state.minimize
     },
     enforceConstraints() {
       var el = this.$refs.portField
@@ -92,6 +109,7 @@ export default {
   margin-bottom: -18px;
   color: gray;
 }
+
 .modal {
   overflow: hidden;
   position: fixed;
@@ -117,7 +135,7 @@ export default {
     padding: 1.5rem;
     position: relative;
     max-width: 300px;
-    margin: 100px auto;
+    margin: 90px auto;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
@@ -129,10 +147,26 @@ export default {
       margin-bottom: 10px !important;
       border-radius: 0.5em;
       height: 14px !important;
+
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
     }
 
     h3 {
       margin-top: 0;
+    }
+
+    hr {
+      width: 100%;
+      height: 1px;
+      border: none;
+      background: gray;
+      padding: 0;
+      margin-top: 8px;
+      margin-bottom: 18px;
     }
 
     img {
@@ -208,79 +242,80 @@ export default {
 }
 
 .switch {
-  display: inline-block;
+  padding-left: 8px;
+  text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  margin-bottom: 20px;
-  width: 130px;
+  margin-bottom: 10px;
 
   div {
-    float: right;
-    margin-top: 4px;
-    margin-left: -4px;
+    display: inline;
     font-size: 15px;
+    width: calc(100% - 46px);
+    line-height: 0rem;
   }
-}
 
-.switch i {
-  position: relative;
-  display: inline-block;
-  margin-right: .5rem;
-  width: 46px;
-  height: 26px;
-  background-color: #e6e6e6;
-  border-radius: 23px;
-  vertical-align: middle;
-  transition: all 0.3s linear;
-}
+  i {
+    position: relative;
+    display: inline-block;
+    margin-right: .6rem;
+    margin-top: -2px;
+    width: 46px;
+    height: 26px;
+    background-color: #e6e6e6;
+    border-radius: 23px;
+    vertical-align: middle;
+    transition: all 0.3s linear;
 
-.switch i::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 42px;
-  height: 22px;
-  background-color: #fff;
-  border-radius: 11px;
-  transform: translate3d(2px, 2px, 0) scale3d(1, 1, 1);
-  transition: all 0.25s linear;
-}
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 42px;
+      height: 22px;
+      background-color: #fff;
+      border-radius: 11px;
+      transform: translate3d(2px, 2px, 0) scale3d(1, 1, 1);
+      transition: all 0.25s linear;
+    }
 
-.switch i::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  width: 22px;
-  height: 22px;
-  background-color: #fff;
-  border-radius: 11px;
-  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.24);
-  transform: translate3d(2px, 2px, 0);
-  transition: all 0.2s ease-in-out;
-}
+    &::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      width: 22px;
+      height: 22px;
+      background-color: #fff;
+      border-radius: 11px;
+      box-shadow: 0 2px 2px rgba(0, 0, 0, 0.24);
+      transform: translate3d(2px, 2px, 0);
+      transition: all 0.2s ease-in-out;
+    }
+  }
+  
+  &:active i::after {
+    width: 28px;
+    transform: translate3d(2px, 2px, 0);
+  }
 
-.switch:active i::after {
-  width: 28px;
-  transform: translate3d(2px, 2px, 0);
-}
+  &:active input:checked + i::after {
+    transform: translate3d(16px, 2px, 0);
+  }
 
-.switch:active input:checked + i::after {
-  transform: translate3d(16px, 2px, 0);
-}
+  input {
+    display: none;
+  }
 
-.switch input {
-  display: none;
-}
+  input:checked + i {
+    background-color: #4BD763;
+  }
 
-.switch input:checked + i {
-  background-color: #4BD763;
-}
+  input:checked + i::before {
+    transform: translate3d(18px, 2px, 0) scale3d(0, 0, 0);
+  }
 
-.switch input:checked + i::before {
-  transform: translate3d(18px, 2px, 0) scale3d(0, 0, 0);
-}
-
-.switch input:checked + i::after {
-  transform: translate3d(22px, 2px, 0);
+  input:checked + i::after {
+    transform: translate3d(22px, 2px, 0);
+  }
 }
 </style>
