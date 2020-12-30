@@ -28,7 +28,8 @@
         <input type="search" placeholder="Search" class="textinput" v-model="search" />
       </div>
       <simplebar class="chats" ref="chats" data-simplebar-auto-hide="false">
-        <chat v-for="chat in filteredChats" :key="chat.id" :chatid="chat.id"
+        <chat v-for="chat in filteredChats" :key="chat.id"
+          :chatid="chat.address"
           :author="chat.author"
           :text="chat.text"
           :date="chat.date"
@@ -139,12 +140,10 @@ export default {
 
     ipcRenderer.on('update_available', () => {
       ipcRenderer.removeAllListeners('update_available')
-      console.log('Update detected. Downloading...')
     })
 
     ipcRenderer.on('update_downloaded', () => {
       ipcRenderer.removeAllListeners('update_downloaded')
-      console.log('Update downloaded. Waiting on user to restart.')
       this.updateAvailable = true
     })
 
@@ -210,7 +209,7 @@ export default {
 .emoji {
   position: relative;
   top: 0.15em;
-  width: 14px;
+  width: 13px;
 }
 
 .searchContainer {

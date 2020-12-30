@@ -52,7 +52,7 @@ async function createWindow() {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
+    // if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
 
     //Log autoUpdater in development
     autoUpdater.logger = require("electron-log")
@@ -62,6 +62,8 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
+
+  win.webContents.openDevTools({mode:'undocked'})
 
   win.on('restore', () => {
     showWin()
@@ -134,7 +136,6 @@ if (isDevelopment) {
 app.commandLine.appendSwitch('ignore-certificate-errors', 'true')
 
 ipcMain.on('loaded', (event) => {
-  console.log('Checking for updates...')
   autoUpdater.checkForUpdatesAndNotify()
 })
 
@@ -208,14 +209,12 @@ function showWin () {
   if (app.dock) app.dock.show()
 }
 
-// And this anywhere:
 function registerLocalAudioProtocol () {
   protocol.registerFileProtocol('wm-audio', (request, callback) => {
     const url = request.url.replace(/^wm-audio:\/\//, '')
     // Decode URL to prevent errors when loading filenames with UTF-8 chars or chars like "#"
     const decodedUrl = decodeURI(url) // Needed in case URL contains spaces
     try {
-      // eslint-disable-next-line no-undef
       return callback(path.join(__static, decodedUrl))
     } catch (error) {
       console.error(

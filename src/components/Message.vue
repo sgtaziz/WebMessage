@@ -20,20 +20,17 @@
 
           <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
             <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
-            <template v-if="msg.attachments && msg.attachments.length > 0">
-              <div v-for="(attachment, index) in msg.attachments" :key="`${i}-${index}`" class="attachment">
-                <img v-if="isImage(attachment[1])"
-                :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(attachment[0])}&type=${attachment[1]}&auth=${$store.state.password}`"
-                @load="scrollToBottom" />
 
-                <video v-else-if="isVideo(attachment[1])" controls width="100%" @loadeddata="scrollToBottom">
-                  <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(attachment[0])}&type=${attachment[1]}&auth=${$store.state.password}`"
-                    :type="attachment[1].includes('quicktime') ? 'video/mp4' : attachment[1]" />
-                    This video type is not supported.
-                </video>
-              </div>
-            </template>
             <template v-for="(text, i) in msg.texts">
+            
+              <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
+                <template v-if="attachment[0] != ''">
+                  <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                  <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                </template>
+                
+              </div>
+
               <div
                 class="message"
                 :key="i"
@@ -71,13 +68,17 @@ import EmojiAllData from '@kevinfaguiar/vue-twemoji-picker/emoji-data/en/emoji-a
 import EmojiGroups from '@kevinfaguiar/vue-twemoji-picker/emoji-data/emoji-groups.json'
 import Autocomplete from '@trevoreyre/autocomplete-vue'
 import '@trevoreyre/autocomplete-vue/dist/style.css'
+import VideoPlayer from './VideoPlayer'
+import ExpandableImage from './ExpandableImage'
 
 export default {
   name: 'Message',
   components: {
     simplebar,
-    'twemoji-textarea': TwemojiTextarea,
-    Autocomplete
+    TwemojiTextarea,
+    Autocomplete,
+    VideoPlayer,
+    ExpandableImage
   },
   data: function () {
     return {
@@ -229,7 +230,7 @@ export default {
           }
         })
       } else {
-        setTimeout(this.fetchMessages, 100)
+        setTimeout(this.fetchMessages, 1000)
       }
     },
     autoResize (value) {
@@ -262,8 +263,7 @@ export default {
         this.messageText[this.$route.params.id] = ""
         this.autoResize()
       } else {
-        console.log("Socket disconnected, waiting...")
-        setTimeout(this.sendText(messageText), 100)
+        setTimeout(this.sendText(messageText), 1000)
       }
     },
     scrollToBottom () {
@@ -303,6 +303,7 @@ export default {
   socket: {
     fetchMessages (data) {
       if (this.$route.params.id == 'new') return
+      if (data && data[0] && data[0].chatId != this.$route.params.id) return
 
       if (this.offset == 0) this.messages = data
       else this.messages.push(...data)
@@ -349,7 +350,9 @@ export default {
       if (Object.keys(message).length == 0) {
         console.log("Received a message, but content was empty.")
       } else {
-        if (this.messages && this.messages.length > 0 && message[0]['address'] == this.messages[0]['address']) {
+        if (this.messages && this.messages.length > 0 && message[0]['chatId'] == this.messages[0]['chatId']) {
+          if (this.messages.findIndex(obj => obj.id == message[0].id) != -1) return
+
           this.messages.unshift(message[0])
           this.lastHeight = null
 
@@ -360,9 +363,11 @@ export default {
     },
     onerror () {
       this.loading = false
+      this.messages = []
     },
     onclose () {
       this.loading = false
+      this.messages = []
     },
     onopen () {
       this.loading = false
@@ -669,8 +674,14 @@ export default {
     margin-bottom: -1px;
 
     img {
-      max-width: 300px;
-      max-height: 550px;
+      max-width: 280px;
+      max-height: 700px;
+      border-radius: 20px;
+    }
+
+    video {
+      max-width: 420px;
+      max-height: 700px;
       border-radius: 20px;
     }
   }
