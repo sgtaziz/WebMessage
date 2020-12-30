@@ -183,7 +183,7 @@ export default {
         notif.on('click', (event, arg) => {
           if (chatData && chatData.id) {
             ipcRenderer.send('show_win')
-            this.$router.push('/message/'+chatData.id)
+            this.$router.push('/message/'+messageData.chatId)
           }
         })
         notif.show()
