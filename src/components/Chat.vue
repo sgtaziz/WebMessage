@@ -32,10 +32,11 @@ export default {
   },
   computed: {
     trimmedText() {
-      if (this.text.includes("￼")) { //This looks empty, but there is a unicode character in there (U+FFFC)
+      let text = this.$options.filters.twemoji(this.text)
+      if (text == '' && this.text.includes("￼")) { //This looks empty, but there is a unicode character in there (U+FFFC)
         return "<i>Attachment</i>"
       }
-      return this.$options.filters.twemoji(this.text)
+      return text
     }
   },
   filters: {

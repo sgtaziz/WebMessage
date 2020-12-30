@@ -48,21 +48,23 @@ export default {
       document.body.appendChild(a)
       a.download = this.path.split('/').pop()
       a.href = this.base64URL
-      a.target = '_blank'
       a.click()
     },
     handleLoad () {
-      this.loadedData()
+      this.$nextTick(this.loadedData)
 
       let canvas = document.createElement('canvas')
       let context = canvas.getContext('2d')
       let image = this.$refs.image
 
-      canvas.height = image.naturalHeight
-      canvas.width = image.naturalWidth
-      context.drawImage(image, 0, 0)
+      if (image) {
+        canvas.height = image.naturalHeight
+        canvas.width = image.naturalWidth
+        context.drawImage(image, 0, 0)
 
-      this.base64URL = canvas.toDataURL()
+        this.base64URL = canvas.toDataURL()
+      }
+
       this.loadedImage = true
     }
   },
@@ -113,7 +115,7 @@ body > .expandable-image.expanded {
   cursor: default;
 }
 body > .expandable-image.expanded > img {
-  width: 100%;
+  width: auto;
   max-width: 90%;
   max-height: 90%;
   object-fit: contain;

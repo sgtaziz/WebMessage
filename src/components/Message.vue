@@ -27,8 +27,8 @@
                 <template v-if="attachment[0] != ''">
                   <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
                   <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                  <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
                 </template>
-                
               </div>
 
               <div
@@ -44,15 +44,26 @@
       </simplebar>
 
       <div class="textboxContainer">
+        <div class="attachmentPreview" v-if="hasAttachments">
+          <div class="attachment" v-for="(attachment, i) in this.$refs.uploadButton.attachments" :key='i'>
+            <div class="removeAttachment" @click="removeAttachment(i)">
+              <feather type="x-circle" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="16"></feather>
+            </div>
+            {{ attachment.name }}
+          </div>
+        </div>
         <twemoji-textarea @contentChanged="autoResize" placeholder="Send a message..."
           :emojiData="emojiDataAll"
           :emojiGroups="emojiGroups"
           :initialContent="messageText[$route.params.id]"
+          :class="hasAttachments ? 'withAttachments' : ''"
           @enterKey="sendText(messageText[$route.params.id])">
           <template v-slot:twemoji-picker-button>
             <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
           </template>
         </twemoji-textarea>
+        <img src="@/assets/loading.webp" style="height:22px;" v-if="!canSend" />
+        <upload-button v-show="canSend" ref="uploadButton" @filesChanged="previewFiles" />
       </div>
     </template>
   </div>
@@ -70,6 +81,8 @@ import Autocomplete from '@trevoreyre/autocomplete-vue'
 import '@trevoreyre/autocomplete-vue/dist/style.css'
 import VideoPlayer from './VideoPlayer'
 import ExpandableImage from './ExpandableImage'
+import DownloadAttachment from './DownloadAttachment'
+import UploadButton from './UploadButton'
 
 export default {
   name: 'Message',
@@ -78,7 +91,9 @@ export default {
     TwemojiTextarea,
     Autocomplete,
     VideoPlayer,
-    ExpandableImage
+    ExpandableImage,
+    DownloadAttachment,
+    UploadButton
   },
   data: function () {
     return {
@@ -89,7 +104,9 @@ export default {
       receiver: '',
       lastHeight: null,
       ignoreNextScroll: false,
-      loading: false
+      loading: false,
+      canSend: true,
+      hasAttachments: false
     }
   },
   computed: {
@@ -132,6 +149,11 @@ export default {
       this.lastHeight = null
       this.loading = false
       this.ignoreNextScroll = false
+      this.canSend = true
+      this.hasAttachments = false
+      if (this.$refs.uploadButton) {
+        this.$refs.uploadButton.clear()
+      }
 
       this.autoCompleteHooks()
       this.fetchMessages()
@@ -234,8 +256,14 @@ export default {
       }
     },
     autoResize (value) {
-      this.messageText[this.$route.params.id] = value
       var el = document.getElementById('twemoji-textarea')
+
+      if (!this.canSend) {
+        el.innerHTML = this.messageText[this.$route.params.id]
+        return
+      }
+
+      this.messageText[this.$route.params.id] = value
 
       this.$nextTick(() => {
         let scrollHeight = el.scrollHeight
@@ -247,10 +275,16 @@ export default {
       })
     },
     sendText (messageText) {
+      if (!messageText) messageText = ''
       messageText = messageText.trim()
+      if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
+      if (!this.canSend) return
+
       if (this.$socket && this.$socket.readyState == 1) {
+        this.canSend = false
         let textObj = {
           text: messageText,
+          attachments: this.$refs.uploadButton.attachments,
           address: this.messages[0] ? this.messages[0].address : this.receiver
         }
 
@@ -258,12 +292,8 @@ export default {
           action: "sendText",
           data: textObj
         })
-
-        document.getElementById("twemoji-textarea").innerHTML = ""
-        this.messageText[this.$route.params.id] = ""
-        this.autoResize()
       } else {
-        setTimeout(this.sendText(messageText), 1000)
+        setTimeout(this.sendText(messageText), 500)
       }
     },
     scrollToBottom () {
@@ -294,6 +324,13 @@ export default {
       } else if (/^\+\d{11,16}/gi.test(input)) {
         this.receiver = input
       }
+    },
+    previewFiles () {
+      this.hasAttachments = this.$refs.uploadButton.attachments != null
+    },
+    removeAttachment (i) {
+      if (!this.canSend) return
+      this.$refs.uploadButton.remove(i)
     }
   },
   mounted () {
@@ -361,6 +398,16 @@ export default {
         }
       }
     },
+    textSent () {
+      document.getElementById("twemoji-textarea").innerHTML = ""
+      this.messageText[this.$route.params.id] = ""
+      if (this.$refs.uploadButton) {
+        this.$refs.uploadButton.clear()
+      }
+      this.canSend = true
+
+      this.autoResize()
+    },
     onerror () {
       this.loading = false
       this.messages = []
@@ -380,7 +427,35 @@ export default {
 </script>
 
 <style lang="scss">
+.attachmentPreview {
+  border: 1px solid #545454;
+  margin-left: 32px;
+  margin-right: 32px;
+  margin-bottom: -1px;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  padding: 5px;
+  padding-top: 0px;
 
+  .attachment {
+    border-radius: 10px;
+    padding: 6px 10px;
+    color: lighten(#c2c2c2, 20%);
+    background-color: #3A3A3C;
+    position: relative;
+    overflow-wrap: break-word;
+    display: inline-block;
+    max-width: 120px;
+    margin-right: 5px;
+    margin-top: 5px;
+
+    .removeAttachment {
+      position: absolute;
+      right: -4px;
+      top: -4px;
+    }
+  }
+}
 .autocomplete-result {
   padding: 12px 12px 12px 28px;
   background-image: url('../assets/search.svg');
@@ -429,9 +504,10 @@ export default {
 
 #twemoji-textarea-outer {
   background-color: transparent !important;
+  width: calc(100% - 26px);
+  float: left;
 
   #twemoji-textarea {
-    border: none;
     overflow: auto;
     outline: none;
     -webkit-box-shadow: none;
@@ -446,7 +522,7 @@ export default {
     min-height: 22px !important;
     max-height: 100px !important;
     height: 22px !important;
-    width: calc(100% - 45px) !important;
+    flex-grow: 90;
     border-radius: 14px !important;
     padding-left: 10px !important;
     background: rgba(29,29,29, 1) !important;
@@ -454,12 +530,20 @@ export default {
     line-height: 21px !important;
     font-size: 13px !important;
     margin-left: 6px !important;
+    margin-right: 6px !important;
     overflow-x: hidden;
 
     .emoji {
       width: 15px !important;
       height: 15px !important;
       vertical-align: 0 !important;
+    }
+  }
+
+  &.withAttachments {
+    #twemoji-textarea {
+      border-top-right-radius: 0px !important;
+      border-top-left-radius: 0px !important;
     }
   }
 
@@ -586,6 +670,13 @@ export default {
   padding-bottom: 4px;
   width: calc(100% - 20px);
   margin-right: 0px;
+
+  .feather {
+    &:hover {
+      fill: lighten(rgb(152,152,152), 20%);
+      cursor: pointer;
+    }
+  }
 }
 .receiverContainer {
   font-size: 14px;
@@ -671,18 +762,22 @@ export default {
 
   .attachment {
     max-width: 75%;
-    margin-bottom: -1px;
+    border-radius: 18px;
 
     img {
       max-width: 280px;
       max-height: 700px;
-      border-radius: 20px;
+      border-radius: 12px;
+      margin-bottom: -2px;
+      margin-top: 1px;
     }
 
     video {
       max-width: 420px;
       max-height: 700px;
-      border-radius: 20px;
+      border-radius: 12px;
+      margin-bottom: -1px;
+     margin-top: 1px;
     }
   }
 }

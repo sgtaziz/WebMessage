@@ -52,7 +52,7 @@ async function createWindow() {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    // if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
+    if (!process.env.IS_TEST) win.webContents.openDevTools({mode:'undocked'})
 
     //Log autoUpdater in development
     autoUpdater.logger = require("electron-log")
@@ -63,7 +63,7 @@ async function createWindow() {
     win.loadURL('app://./index.html')
   }
 
-  win.webContents.openDevTools({mode:'undocked'})
+  // win.webContents.openDevTools({mode:'undocked'})
 
   win.on('restore', () => {
     showWin()

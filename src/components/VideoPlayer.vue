@@ -1,5 +1,5 @@
 <template>
-  <video class="videoplayer" controls width="100%" @loadeddata="loadedData">
+  <video class="videoplayer" controls width="100%" @canplay="handleLoad" @canplaythrough="handleLoad" @loadeddata="handleLoad">
     <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(path)}&type=${type}&auth=${$store.state.password}`"
       :type="type.includes('quicktime') ? 'video/mp4' : type" />
     <!-- <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(path)}&type=${type}&auth=${$store.state.password}`"
@@ -18,7 +18,12 @@ export default {
     loadedData: { type: Function }
   },
   mounted() {
-  }
+  },
+  methods: {
+    handleLoad() {
+      this.$nextTick(this.loadedData)
+    }
+  },
 }
 </script>
 

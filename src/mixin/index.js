@@ -32,7 +32,7 @@ export default {
   methods: {
     sendSocket(obj) {
       obj.password = this.$store.state.password
-      this.$socket.sendObj(obj)
+      return this.$socket.send(JSON.stringify(obj))
     }
   }
 }
