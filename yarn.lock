@@ -10023,7 +10023,7 @@ twemoji-parser@^11.0.2:
   resolved "https://registry.yarnpkg.com/twemoji-parser/-/twemoji-parser-11.0.2.tgz#24e87c2008abe8544c962f193b88b331de32b446"
   integrity sha512-5kO2XCcpAql6zjdLwRwJjYvAZyDy3+Uj7v1ipBzLthQmDL7Ce19bEqHr3ImSNeoSW2OA8u02XmARbXHaNO8GhA==
 
-twemoji@^13.0.0:
+twemoji@^13.0.0, twemoji@^13.0.1:
   version "13.0.1"
   resolved "https://registry.yarnpkg.com/twemoji/-/twemoji-13.0.1.tgz#57ddc8bd86c8175c11376f5f9ab322a02e739c2d"
   integrity sha512-mrTBq+XpCLM4zm76NJOjLHoQNV9mHdBt3Cba/T5lS1rxn8ArwpqE47mqTocupNlkvcLxoeZJjYSUW0DU5ZwqZg==
@@ -10499,11 +10499,6 @@ vue-template-es2015-compiler@^1.9.0:
   version "1.9.1"
   resolved "https://registry.yarnpkg.com/vue-template-es2015-compiler/-/vue-template-es2015-compiler-1.9.1.tgz#1ee3bc9a16ecbf5118be334bb15f9c46f82f5825"
   integrity sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==
-
-vue-twemoji@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.yarnpkg.com/vue-twemoji/-/vue-twemoji-1.0.1.tgz#b990ee1e789bbfcc62eee2662d6adfe4b40c508f"
-  integrity sha512-vKdA9vZuV0ADB8O2qCah//nGv9seb+S1hMTwU6IhPmmOsax4EHqwzyXSTf7kr3jCobsQIBBtNg2bpuRYoxalAA==
 
 vue@^2.6.11:
   version "2.6.12"
