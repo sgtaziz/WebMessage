@@ -23,7 +23,7 @@ import moment from 'moment'
 export default {
   name: 'Chat',
   props: {
-    chatid: { type: Number },
+    chatid: { type: String },
     docid: { type: Number },
     author: { type: String },
     text: { type: String },

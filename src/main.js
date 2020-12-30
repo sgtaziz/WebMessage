@@ -7,11 +7,11 @@ import mixins from './mixin'
 import axios from 'axios'
 import VueNativeSock from 'vue-native-websocket'
 import VueFeather from 'vue-feather'
-import vuetwemoji from 'vue-twemoji'
+import Twemoji from './plugins/Twemoji'
 
 const https = require('https')
 
-Vue.use(vuetwemoji, {
+Vue.use(Twemoji, {
   extension: '.svg',
   size: 'svg'
 })
@@ -21,7 +21,6 @@ Vue.use(VueNativeSock, 'ws://', {
   reconnection: true,
   connectManually: true,
 })
-
 Vue.use(VueFeather)
 
 Vue.config.productionTip = false
