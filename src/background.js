@@ -49,6 +49,28 @@ async function createWindow() {
 
   win.minimizedState = true
 
+  await loadURL()
+
+  // win.webContents.openDevTools({mode:'undocked'})
+
+  win.on('restore', () => {
+    showWin()
+  })
+
+  win.webContents.on('did-fail-load', async() => {
+    loadURL()
+  })
+
+  autoUpdater.on('update-available', () => {
+    win.webContents.send('update_available')
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    win.webContents.send('update_downloaded')
+  })
+}
+
+async function loadURL () {
   if (process.env.WEBPACK_DEV_SERVER_URL) {
     // Load the url of the dev server if in development mode
     await win.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
@@ -62,20 +84,6 @@ async function createWindow() {
     // Load the index.html when not in development
     win.loadURL('app://./index.html')
   }
-
-  // win.webContents.openDevTools({mode:'undocked'})
-
-  win.on('restore', () => {
-    showWin()
-  })
-
-  autoUpdater.on('update-available', () => {
-    win.webContents.send('update_available')
-  })
-
-  autoUpdater.on('update-downloaded', () => {
-    win.webContents.send('update_downloaded')
-  })
 }
 
 // Quit when all windows are closed.

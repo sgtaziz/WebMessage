@@ -63,7 +63,7 @@
           </template>
         </twemoji-textarea>
         <img src="@/assets/loading.webp" style="height:22px;" v-if="!canSend" />
-        <upload-button v-show="canSend" ref="uploadButton" @filesChanged="previewFiles" />
+        <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
       </div>
     </template>
   </div>
@@ -763,21 +763,19 @@ export default {
   .attachment {
     max-width: 75%;
     border-radius: 18px;
+    height: fit-content;
+    margin-bottom: -2px;
 
     img {
       max-width: 280px;
       max-height: 700px;
       border-radius: 12px;
-      margin-bottom: -2px;
-      margin-top: 1px;
     }
 
     video {
       max-width: 420px;
       max-height: 700px;
       border-radius: 12px;
-      margin-bottom: -1px;
-     margin-top: 1px;
     }
   }
 }
@@ -785,8 +783,8 @@ export default {
 .message {
   border-radius: 18px;
   padding: 6px 10px;
-  margin-top: 1px;
-  margin-bottom: 0px;
+  margin-top: 0px;
+  margin-bottom: 1px;
   display: inline-block;
   text-align: start;
   unicode-bidi: plaintext;

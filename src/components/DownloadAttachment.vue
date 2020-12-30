@@ -53,6 +53,7 @@ export default {
   position: relative;
   overflow-wrap: break-word;
   display: inline-block;
+  margin-bottom: 3px;
 
   .feather {
     float: right;
