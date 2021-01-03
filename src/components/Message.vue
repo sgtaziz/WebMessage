@@ -83,6 +83,7 @@ import VideoPlayer from './VideoPlayer'
 import ExpandableImage from './ExpandableImage'
 import DownloadAttachment from './DownloadAttachment'
 import UploadButton from './UploadButton'
+import axios from 'axios'
 
 export default {
   name: 'Message',
@@ -279,22 +280,30 @@ export default {
       messageText = messageText.trim()
       if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
       if (!this.canSend) return
+      this.canSend = false
 
-      if (this.$socket && this.$socket.readyState == 1) {
-        this.canSend = false
-        let textObj = {
-          text: messageText,
-          attachments: this.$refs.uploadButton.attachments,
-          address: this.messages[0] ? this.messages[0].address : this.receiver
-        }
-
-        this.sendSocket({
-          action: "sendText",
-          data: textObj
-        })
-      } else {
-        setTimeout(this.sendText(messageText), 500)
+      let textObj = {
+        text: messageText,
+        attachments: this.$refs.uploadButton.attachments,
+        address: this.messages[0] ? this.messages[0].address : this.receiver
       }
+
+      axios.post(this.$store.getters.httpURI+'/sendText', textObj)
+        .then(response => {
+          document.getElementById("twemoji-textarea").innerHTML = ""
+          this.messageText[this.$route.params.id] = ""
+          if (this.$refs.uploadButton) {
+            this.$refs.uploadButton.clear()
+          }
+          this.canSend = true
+
+          this.autoResize()
+        })
+        .catch(error => {
+          console.log(error)
+          alert("There was an error while sending your text.\n" + error)
+          this.canSend = true
+        })
     },
     scrollToBottom () {
       if (this.$refs.messages) {
@@ -397,16 +406,6 @@ export default {
           setTimeout(this.scrollToBottom, 10) //Just in case
         }
       }
-    },
-    textSent () {
-      document.getElementById("twemoji-textarea").innerHTML = ""
-      this.messageText[this.$route.params.id] = ""
-      if (this.$refs.uploadButton) {
-        this.$refs.uploadButton.clear()
-      }
-      this.canSend = true
-
-      this.autoResize()
     },
     onerror () {
       this.loading = false
