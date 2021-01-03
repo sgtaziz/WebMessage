@@ -2,7 +2,7 @@
   "name": "webmessage",
   "author": "sgtaziz",
   "description": "A client for communicating with the WebMessage tweak on iOS. Send and receive messages from the comfort of your computer.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service electron:serve",

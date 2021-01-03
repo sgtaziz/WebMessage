@@ -18,7 +18,9 @@ export default {
     return {
       attachments: null,
       progress: 0,
-      isReading: false
+      isReading: false,
+      sizeLimit: 100 // In MB. Files larger than this cause the client to crash for some reason.
+                     // Although it's probably good to keep it low so it doesn't take 5 years.
     }
   },
   computed: {
@@ -26,6 +28,21 @@ export default {
       let types = 'image/*,video/*'
       if (this.enableiMessageAttachments) types = types + ',application/*,text/plain'
       return types
+    },
+    attachmentsTooBig () {
+      if (this.enableiMessageAttachments) {
+        return 'iMessage attachments size cannot be larger than '+this.sizeLimit+'MB.'
+      } else {
+        return 'SMS attachments size cannot be larger than '+this.sizeLimit+'kB.'
+      }
+    }
+  },
+  mounted () {
+    if (!this.enableiMessageAttachments) {
+      // SMS limitations recommend a max payload size of 300kB.
+      // This can vary between carriers, but there is no way to
+      // detect it. So, recommended value it is.
+      this.sizeLimit = 0.3
     }
   },
   methods: {
@@ -67,9 +84,10 @@ export default {
         this.progress = Math.round((attachments.length/e.target.files.length)*100)
       }
 
-      if (totalSize > 7.5e7) {
-        alert('Attachments size cannot be larger than 75MB.')
+      if (totalSize > (this.sizeLimit * 1e6)) {
         this.attachments = null
+        this.isReading = false
+        alert(this.attachmentsTooBig)
         return
       }
 

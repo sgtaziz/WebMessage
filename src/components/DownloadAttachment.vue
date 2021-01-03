@@ -46,9 +46,9 @@ export default {
 <style lang="scss">
 .downloadContainer {
   border-radius: 10px;
-  padding: 6px 10px;
+  padding: 10px 10px;
   color: lighten(#c2c2c2, 20%);
-  width: 150px;
+  width: 135px;
   background-color: #3A3A3C;
   position: relative;
   overflow-wrap: break-word;

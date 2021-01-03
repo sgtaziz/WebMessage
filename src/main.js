@@ -32,6 +32,8 @@ Vue.prototype.$http = axios.create({
 
 Vue.mixin(mixins)
 
+axios.defaults.headers.common['Authorization'] = store.state.password
+
 new Vue({
   router,
   store,

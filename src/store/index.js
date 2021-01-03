@@ -1,5 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import axios from 'axios'
+
 const Store = require('electron-store')
 
 Vue.use(Vuex)
@@ -19,6 +21,7 @@ export default new Vuex.Store({
     setPassword(state, password) {
       state['password'] = password
       persistentStore.set('password', password)
+      axios.defaults.headers.common['Authorization'] = password
     },
     setIPAddress(state, ip) {
       state['ipAddress'] = ip
