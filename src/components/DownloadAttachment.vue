@@ -38,6 +38,7 @@ export default {
       a.download = this.path.split('/').pop()
       a.href =  this.url
       a.click()
+      a.remove()
     }
   }
 }

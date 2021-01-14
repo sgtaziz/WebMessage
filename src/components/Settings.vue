@@ -24,6 +24,16 @@
           <i></i>
           <div>Keep in tray</div>
         </label>
+        <label class="switch">
+          <input type="checkbox" v-model="macstyle">
+          <i></i>
+          <div>Use macOS style</div>
+        </label>
+        <label class="switch">
+          <input type="checkbox" v-model="acceleration">
+          <i></i>
+          <div>Enable hardware acceleration</div>
+        </label>
         <a class="btn" v-on:click="saveModal">Save</a>
         <a v-on:click="closeModal" class="btn destructive">Cancel</a>
 
@@ -47,6 +57,8 @@ export default {
       ssl: false,
       launchOnStartup: false,
       minimize: true,
+      macstyle: true,
+      acceleration: true,
       version: ''
     }
   },
@@ -58,6 +70,8 @@ export default {
       this.$store.commit('setSSL', this.ssl)
       this.$store.commit('setStartup', this.startup)
       this.$store.commit('setMinimize', this.minimize)
+      this.$store.commit('setMacStyle', this.macstyle)
+      this.$store.commit('setAcceleration', this.acceleration)
       this.show = false
 
       this.$emit('saved')
@@ -77,6 +91,8 @@ export default {
       this.ssl = this.$store.state.ssl
       this.startup = this.$store.state.startup
       this.minimize = this.$store.state.minimize
+      this.macstyle = this.$store.state.macstyle
+      this.acceleration = this.$store.state.acceleration
     },
     enforceConstraints() {
       var el = this.$refs.portField
@@ -135,7 +151,7 @@ export default {
     padding: 1.5rem;
     position: relative;
     max-width: 300px;
-    margin: 90px auto;
+    margin: 45px auto;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
@@ -231,14 +247,6 @@ export default {
   &__footer {
     padding: 10px 20px 20px;
   }
-}
-
-.fade-enter-active, .fade-leave-active {
-  transition: opacity 0.2s;
-}
-
-.fade-enter, .fade-leave-to {
-  opacity: 0;
 }
 
 .switch {

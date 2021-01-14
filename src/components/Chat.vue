@@ -116,7 +116,7 @@ export default {
   }
 
   .author {
-    font-family: "San Francisco Bold";
+    font-weight: 500;
     max-width: 156px;
     display: inline-block;
     white-space: nowrap;
@@ -125,7 +125,7 @@ export default {
   }
 
   .date {
-    font-family: "San Francisco Light";
+    font-weight: 200;
     padding-right: 10px;
     float: right;
     color: rgb(157,157,157);

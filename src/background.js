@@ -29,13 +29,14 @@ contextMenu({
 
 async function createWindow() {
   // Create the browser window.
+  console.log(persistentStore.get('macstyle', true))
   win = new BrowserWindow({
     width: 800,
     height: 600,
     minWidth: 700,
     minHeight: 600,
-    transparent: true,
-    frame: false,
+    transparent: persistentStore.get('acceleration', true),
+    frame: persistentStore.get('macstyle', true),
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -46,8 +47,6 @@ async function createWindow() {
     },
     icon: path.join(__static, 'icon.png')
   })
-
-  win.minimizedState = true
 
   await loadURL()
 
@@ -170,6 +169,11 @@ ipcMain.on('startup_check', () => {
     console.log("Could not detect autoLauncher settings:")
     console.log(err)
   })
+})
+
+ipcMain.on('reload_app', () => {
+  win.destroy()
+  createWindow()
 })
 
 ipcMain.on('minimizeToTray', () => {

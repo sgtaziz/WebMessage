@@ -49,6 +49,7 @@ export default {
       a.download = this.path.split('/').pop()
       a.href = this.base64URL
       a.click()
+      a.remove()
     },
     handleLoad () {
       this.$nextTick(this.loadedData)

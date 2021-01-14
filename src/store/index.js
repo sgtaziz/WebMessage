@@ -15,7 +15,9 @@ export default new Vuex.Store({
     port: persistentStore.get('port', 8180),
     ssl: persistentStore.get('ssl', true),
     startup: persistentStore.get('startup', false),
-    minimize: persistentStore.get('minimize', true)
+    minimize: persistentStore.get('minimize', true),
+    macstyle: persistentStore.get('macstyle', true),
+    acceleration: persistentStore.get('acceleration', true)
   },
   mutations: {
     setPassword(state, password) {
@@ -43,6 +45,16 @@ export default new Vuex.Store({
     setMinimize(state, minimize) {
       state['minimize'] = minimize
       persistentStore.set('minimize', minimize)
+    },
+    setMacStyle(state, macstyle) {
+      state['macstyle'] = macstyle
+      persistentStore.set('macstyle', macstyle)
+      ipcRenderer.send('reload_app')
+    },
+    setAcceleration(state, acceleration) {
+      state['acceleration'] = acceleration
+      persistentStore.set('acceleration', acceleration)
+      ipcRenderer.send('reload_app')
     }
   },
   getters: {
