@@ -40,7 +40,9 @@
       </simplebar>
     </div>
     <div id="content">
-      <router-view/>
+      <transition name="fade" mode="out-in">
+        <router-view></router-view>
+      </transition>
     </div>
   </div>
 </template>
@@ -251,29 +253,13 @@ export default {
   }
 }
 
-@font-face {
-  font-family: "San Francisco";
-  font-weight: 400;
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-regular-webfont.woff");
-}
-
-@font-face {
-  font-family: "San Francisco Bold";
-  font-weight: 400;
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-bold-webfont.woff");
-}
-
-@font-face {
-  font-family: "San Francisco Light";
-  font-weight: 400;
-  src: url("https://applesocial.s3.amazonaws.com/assets/styles/fonts/sanfrancisco/sanfranciscodisplay-light-webfont.woff");
-}
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;500;700&display=swap');
 
 html {
   height: 100%;
   max-height: 100%;
   width: 100%;
-  background-color: rgba(29,29,29, 0);
+  background-color: rgba(29,29,29,0);
 }
 
 body {
@@ -288,8 +274,8 @@ body {
 }
 
 #app {
-  font-family: -apple-system, "San Francisco", Avenir, Helvetica, Arial, sans-serif;
-  letter-spacing: 0.1px;
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 300;
   text-align: center;
   color: #EBECEC;
   position: absolute;
@@ -297,6 +283,21 @@ body {
   background-color: rgba(29,29,29, 0);
   border: 1px solid #4A4A4A;
   border-radius: 10px;
+}
+
+.fade-enter {
+  opacity: 0;
+}
+
+.fade-enter-active {
+  transition: opacity 0.25s ease;
+}
+
+.fade-leave {}
+
+.fade-leave-active {
+  transition: opacity 0.25s ease;
+  opacity: 0;
 }
 
 #nav {
@@ -334,6 +335,10 @@ body {
   padding-top: 3px;
   float: left;
   line-height: 0px;
+
+  div:hover {
+    filter: brightness(75%);
+  }
 }
 
 .close {

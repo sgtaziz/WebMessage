@@ -1,72 +1,74 @@
 <template>
-  <div class="messageContainer">
-    <div class="titlebar">
-      <div class="receiverContainer">
-        <span class="label">To:</span>
-        <span class="contact" v-if="messages[0] && $route.params.id != 'new'" v-html="$options.filters.twemoji(messages[0].name)"></span>
-        <span class="contact" v-else-if="$route.params.id == 'new'" style="overflow: visible;">
-          <autocomplete :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
-        </span>
-      </div>
-    </div>
-
-    <div v-if="(!messages || messages.length == 0) && $route.params.id != 'new'" style="height:100%;padding:14px;">
-      <img src="@/assets/loading.webp" style="height:18px;" />
-    </div>
-    <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
-      <simplebar class="messages" ref="messages" data-simplebar-auto-hide="false">
-        <div v-for="(msg, i) in sortedMessages" :id="msg.id" :key="msg.id">
-          <div class="timegroup" v-html="dateGroup(i-1, i)"></div>
-
-          <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
-            <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
-
-            <template v-for="(text, i) in msg.texts">
-            
-              <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
-                <template v-if="attachment[0] != ''">
-                  <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
-                  <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
-                  <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
-                </template>
-              </div>
-
-              <div
-                class="message"
-                :key="i"
-                :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
-                v-if="$options.filters.twemoji(text.text) != ''">
-                <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)"></span>
-              </div>
-            </template>
-          </div>
+  <transition name="fade" mode="out-in">
+    <div class="messageContainer" :key="$route.params.id">
+      <div class="titlebar">
+        <div class="receiverContainer">
+          <span class="label">To:</span>
+          <span class="contact" v-if="messages[0] && $route.params.id != 'new'" v-html="$options.filters.twemoji(messages[0].name)"></span>
+          <span class="contact" v-else-if="$route.params.id == 'new'" style="overflow: visible;">
+            <autocomplete :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
+          </span>
         </div>
-      </simplebar>
+      </div>
 
-      <div class="textboxContainer">
-        <div class="attachmentPreview" v-if="hasAttachments">
-          <div class="attachment" v-for="(attachment, i) in this.$refs.uploadButton.attachments" :key='i'>
-            <div class="removeAttachment" @click="removeAttachment(i)">
-              <feather type="x-circle" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="16"></feather>
+      <div v-if="(!messages || messages.length == 0) && $route.params.id != 'new'" style="height:100%;padding:14px;">
+        <img src="@/assets/loading.webp" style="height:18px;" />
+      </div>
+      <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
+        <simplebar class="messages" ref="messages" data-simplebar-auto-hide="false">
+          <div v-for="(msg, i) in sortedMessages" :id="msg.id" :key="msg.id">
+            <div class="timegroup" v-html="dateGroup(i-1, i)"></div>
+
+            <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
+              <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
+
+              <template v-for="(text, i) in msg.texts">
+              
+                <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
+                  <template v-if="attachment[0] != ''">
+                    <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                    <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                    <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
+                  </template>
+                </div>
+
+                <div
+                  class="message"
+                  :key="i"
+                  :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
+                  v-if="$options.filters.twemoji(text.text) != ''">
+                  <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)"></span>
+                </div>
+              </template>
             </div>
-            {{ attachment.name }}
           </div>
+        </simplebar>
+
+        <div class="textboxContainer">
+          <div class="attachmentPreview" v-if="hasAttachments">
+            <div class="attachment" v-for="(attachment, i) in this.$refs.uploadButton.attachments" :key='i'>
+              <div class="removeAttachment" @click="removeAttachment(i)">
+                <feather type="x-circle" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="16"></feather>
+              </div>
+              {{ attachment.name }}
+            </div>
+          </div>
+          <twemoji-textarea @contentChanged="autoResize" placeholder="Send a message..."
+            :emojiData="emojiDataAll"
+            :emojiGroups="emojiGroups"
+            :initialContent="messageText[$route.params.id]"
+            :class="hasAttachments ? 'withAttachments' : ''"
+            @enterKey="sendText(messageText[$route.params.id])">
+            <template v-slot:twemoji-picker-button>
+              <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
+            </template>
+          </twemoji-textarea>
+          <img src="@/assets/loading.webp" style="height:22px;" v-if="!canSend" />
+          <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
         </div>
-        <twemoji-textarea @contentChanged="autoResize" placeholder="Send a message..."
-          :emojiData="emojiDataAll"
-          :emojiGroups="emojiGroups"
-          :initialContent="messageText[$route.params.id]"
-          :class="hasAttachments ? 'withAttachments' : ''"
-          @enterKey="sendText(messageText[$route.params.id])">
-          <template v-slot:twemoji-picker-button>
-            <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
-          </template>
-        </twemoji-textarea>
-        <img src="@/assets/loading.webp" style="height:22px;" v-if="!canSend" />
-        <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
-      </div>
-    </template>
-  </div>
+      </template>
+    </div>
+  </transition>
 </template>
 
 <script>
@@ -455,6 +457,7 @@ export default {
     }
   }
 }
+
 .autocomplete-result {
   padding: 12px 12px 12px 28px;
   background-image: url('../assets/search.svg');
@@ -516,8 +519,8 @@ export default {
     padding: 0 !important;
     margin: 0 !important;
 
-    font-family: -apple-system, "San Francisco", Avenir, Helvetica, Arial, sans-serif;
-    letter-spacing: 0.1px !important;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+    font-weight: 300 !important;
     min-height: 22px !important;
     max-height: 100px !important;
     height: 22px !important;
@@ -634,6 +637,7 @@ export default {
 .emoji-picker__search {
   display: flex;
 }
+
 .emoji-picker h5 {
   margin-bottom: 0;
   color: #b1b1b1;
@@ -641,27 +645,33 @@ export default {
   font-size: 0.8rem;
   cursor: default;
 }
+
 .emoji-picker .emojis {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
 }
+
 .emoji-picker .emojis:after {
   content: "";
   flex: auto;
 }
+
 .emoji-picker .emojis span {
   padding: 0.2rem;
   cursor: pointer;
   border-radius: 5px;
 }
+
 .emoji-picker .emojis span:hover {
   background: #ececec;
   cursor: pointer;
 }
+
 .emoji-picker__search {
   width: 100%;
 }
+
 .textboxContainer {
   //position: absolute;
   bottom: 0;
@@ -677,12 +687,13 @@ export default {
     }
   }
 }
+
 .receiverContainer {
   font-size: 14px;
   padding: 10px 20px;
 
   .label {
-    font-weight: 600;
+    font-weight: 500;
     color: #7F7F7F;
     float: left;
   }
@@ -693,7 +704,7 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: calc(100% - 22px);
+    width: calc(100% - 30px);
   }
 }
 
@@ -728,12 +739,13 @@ export default {
 
   .timegroup {
     text-align: center;
+    padding-top: 10px;
     padding-bottom: 10px;
     color: #999999;
     font-size: 11px;
 
     .bold {
-      font-family: "San Francisco Bold"
+      font-weight: 500;
     }
   }
 
@@ -903,5 +915,4 @@ export default {
     }
   }
 }
-
 </style>
