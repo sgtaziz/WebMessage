@@ -49,12 +49,10 @@ export default new Vuex.Store({
     setMacStyle(state, macstyle) {
       state['macstyle'] = macstyle
       persistentStore.set('macstyle', macstyle)
-      ipcRenderer.send('reload_app')
     },
     setAcceleration(state, acceleration) {
       state['acceleration'] = acceleration
       persistentStore.set('acceleration', acceleration)
-      ipcRenderer.send('reload_app')
     }
   },
   getters: {

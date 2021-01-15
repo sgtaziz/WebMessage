@@ -29,14 +29,14 @@ contextMenu({
 
 async function createWindow() {
   // Create the browser window.
-  console.log(persistentStore.get('macstyle', true))
   win = new BrowserWindow({
     width: 800,
     height: 600,
     minWidth: 700,
     minHeight: 600,
     transparent: persistentStore.get('acceleration', true),
-    frame: persistentStore.get('macstyle', true),
+    frame: !persistentStore.get('macstyle', true),
+    useContentSize: true,
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
@@ -47,6 +47,10 @@ async function createWindow() {
     },
     icon: path.join(__static, 'icon.png')
   })
+
+  if (process.platform !== 'darwin') {
+    win.removeMenu()
+  }
 
   await loadURL()
 
@@ -85,6 +89,9 @@ async function loadURL () {
   }
 }
 
+if (!persistentStore.get('acceleration', true)) {
+  app.disableHardwareAcceleration()
+}
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -172,19 +179,18 @@ ipcMain.on('startup_check', () => {
 })
 
 ipcMain.on('reload_app', () => {
-  win.destroy()
-  createWindow()
+  app.relaunch()
+  app.quit()
+})
+
+ipcMain.on('quit_app', () => {
+  app.quit()
 })
 
 ipcMain.on('minimizeToTray', () => {
   win.setSkipTaskbar(true)
   win.hide()
   if (app.dock) app.dock.hide()
-})
-
-ipcMain.on('quitApp', () => {
-  app.isQuiting = true
-  app.quit()
 })
 
 ipcMain.on('show_win', () => {
@@ -199,7 +205,6 @@ app.whenReady().then(() => {
       showWin()
     }},
     { label: 'Quit', click: () => {
-      app.isQuiting = true
       app.quit()
     }}
   ])

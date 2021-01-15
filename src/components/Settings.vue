@@ -64,6 +64,8 @@ export default {
   },
   methods: {
     saveModal() {
+      let reloadApp = this.$store.state.macstyle != this.macstyle || this.$store.state.acceleration != this.acceleration
+
       this.$store.commit('setPassword', this.password)
       this.$store.commit('setIPAddress', this.ipAddress)
       this.$store.commit('setPort', this.port)
@@ -75,6 +77,7 @@ export default {
       this.show = false
 
       this.$emit('saved')
+      if (reloadApp) ipcRenderer.send('reload_app')
     },
     closeModal() {
       this.loadValues()
@@ -300,7 +303,7 @@ export default {
       transition: all 0.2s ease-in-out;
     }
   }
-  
+
   &:active i::after {
     width: 28px;
     transform: translate3d(2px, 2px, 0);

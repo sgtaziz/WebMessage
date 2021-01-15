@@ -1,9 +1,9 @@
 <template>
-  <div id="app">
+  <div id="app" :class="$store.state.macstyle ? '' : 'nostyle'">
     <settings ref="settingsModal" @saved="connectWS"></settings>
     <div id="nav">
       <div class="titlebar">
-        <div class="buttons">
+        <div class="buttons" v-if="$store.state.macstyle">
           <div class="close" @click="closeWindow">
             <span class="closebutton"><span>x</span></span>
           </div>
@@ -283,6 +283,25 @@ body {
   background-color: rgba(29,29,29, 0);
   border: 1px solid #4A4A4A;
   border-radius: 10px;
+
+  &.nostyle {
+    background-color: rgb(35,35,35);
+    border: none;
+    border-radius: 0;
+    height: 100%;
+    width: 100%;
+
+    #nav {
+      border-radius: 0 !important;
+      margin-left: -1px;
+      margin-top: -1px;
+    }
+
+    #content {
+      bottom: 0; right: 0; top: 0;
+      border-radius: 0;
+    }
+  }
 }
 
 .fade-enter {
