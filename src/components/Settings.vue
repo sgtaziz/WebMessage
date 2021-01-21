@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div class="modal" v-if="show">
-      <div class="modal__backdrop" @click="closeModal()"/>
+      <div class="modal__backdrop" @click="closeModal()" :class="{ nostyle: $store.state.macstyle }"/>
 
       <div class="modal__dialog">
         <h3>Settings</h3>
@@ -146,6 +146,10 @@ export default {
     bottom: 0;
     left: 0;
     z-index: 1;
+
+    &.nostyle {  
+      border-radius: 10px;
+    }
   }
 
   &__dialog {

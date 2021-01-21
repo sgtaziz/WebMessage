@@ -1,5 +1,5 @@
 <template>
-  <div class="expandable-image" :class="{ expanded: expanded }">
+  <div class="expandable-image" :class="{ expanded: expanded, nostyle: $store.state.macstyle }">
     <template v-if="loadedImage">
       <i v-if="!expanded" class="expand-button" @click="expanded = true">
         <feather type="maximize-2" stroke="#fff" size="24"></feather>
@@ -95,11 +95,15 @@ export default {
 }
 </script>
 
-<style>
+<style lang="scss">
 .expandable-image {
   position: relative;
   transition: 0.25s opacity;
   /* cursor: zoom-in; */
+
+  &.nostyle {  
+    border-radius: 10px;
+  }
 }
 body > .expandable-image.expanded {
   position: fixed;

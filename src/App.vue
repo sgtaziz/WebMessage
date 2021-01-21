@@ -1,7 +1,7 @@
 <template>
-  <div id="app" :class="$store.state.macstyle ? '' : 'nostyle'">
+  <div id="app" :class="{ nostyle: !$store.state.macstyle }">
     <settings ref="settingsModal" @saved="connectWS"></settings>
-    <div id="nav">
+    <div id="nav" :class="{ notrans: !$store.state.acceleration }">
       <div class="titlebar">
         <div class="buttons" v-if="$store.state.macstyle">
           <div class="close" @click="closeWindow">
@@ -285,7 +285,7 @@ body {
   border-radius: 10px;
 
   &.nostyle {
-    background-color: rgb(35,35,35);
+    background-color: rgba(40,40,40,1);
     border: none;
     border-radius: 0;
     height: 100%;
@@ -312,8 +312,6 @@ body {
   transition: opacity 0.25s ease;
 }
 
-.fade-leave {}
-
 .fade-leave-active {
   transition: opacity 0.25s ease;
   opacity: 0;
@@ -329,6 +327,10 @@ body {
   top: 0; left: 0; bottom: 0;
   border-top-left-radius: 10px;
   border-bottom-left-radius: 10px;
+
+  &.notrans {
+    background-color: rgba(40,40,40,1);
+  }
 
   a {
     font-weight: bold;

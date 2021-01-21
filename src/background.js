@@ -43,7 +43,8 @@ async function createWindow() {
       // nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION,
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
-      enableRemoteModule: true
+      enableRemoteModule: true,
+      devTools: isDevelopment && !process.env.IS_TEST
     },
     icon: path.join(__static, 'icon.png')
   })
@@ -92,6 +93,7 @@ async function loadURL () {
 if (!persistentStore.get('acceleration', true)) {
   app.disableHardwareAcceleration()
 }
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
