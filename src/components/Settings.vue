@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div class="modal" v-if="show">
-      <div class="modal__backdrop" @click="closeModal()" :class="{ nostyle: $store.state.macstyle }"/>
+      <div class="modal__backdrop" @click="closeModal()" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin') }"/>
 
       <div class="modal__dialog">
         <h3>Settings</h3>
@@ -24,7 +24,7 @@
           <i></i>
           <div>Keep in tray</div>
         </label>
-        <label class="switch">
+        <label class="switch" v-if="process.platform !== 'darwin'">
           <input type="checkbox" v-model="macstyle">
           <i></i>
           <div>Use macOS style</div>
@@ -59,7 +59,8 @@ export default {
       minimize: true,
       macstyle: true,
       acceleration: true,
-      version: ''
+      version: '',
+      process: window.process
     }
   },
   methods: {

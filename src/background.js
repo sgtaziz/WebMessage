@@ -35,7 +35,7 @@ async function createWindow() {
     minWidth: 700,
     minHeight: 600,
     transparent: persistentStore.get('acceleration', true),
-    frame: !persistentStore.get('macstyle', true),
+    frame: !(persistentStore.get('macstyle', true) || process.platform === 'darwin'),
     useContentSize: true,
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone

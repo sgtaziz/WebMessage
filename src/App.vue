@@ -1,9 +1,9 @@
 <template>
-  <div id="app" :class="{ nostyle: !$store.state.macstyle }">
+  <div id="app" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin') }">
     <settings ref="settingsModal" @saved="connectWS"></settings>
     <div id="nav" :class="{ notrans: !$store.state.acceleration }">
       <div class="titlebar">
-        <div class="buttons" v-if="$store.state.macstyle">
+        <div class="buttons" v-if="$store.state.macstyle || process.platform === 'darwin'">
           <div class="close" @click="closeWindow">
             <span class="closebutton"><span>x</span></span>
           </div>
@@ -68,7 +68,8 @@ export default {
       loading: false,
       notifSound: null,
       updateAvailable: false,
-      search: ''
+      search: '',
+      process: window.process
     }
   },
   computed: {
