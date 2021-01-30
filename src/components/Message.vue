@@ -17,7 +17,7 @@
       <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
         <simplebar class="messages" ref="messages" data-simplebar-auto-hide="false">
           <div v-for="(msg, i) in sortedMessages" :id="msg.id" :key="msg.id">
-            <div class="timegroup" v-html="dateGroup(i-1, i)"></div>
+            <div class="timegroup" v-html="dateGroup(i-1, i)" v-if="dateGroup(i-1, i) != ''"></div>
 
             <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
               <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
@@ -739,7 +739,7 @@ export default {
 
   .timegroup {
     text-align: center;
-    padding-top: 10px;
+    // padding-top: 10px;
     padding-bottom: 10px;
     color: #999999;
     font-size: 11px;

@@ -147,9 +147,10 @@ export default {
     bottom: 0;
     left: 0;
     z-index: 1;
+    border-radius: 10px;
 
     &.nostyle {  
-      border-radius: 10px;
+      border-radius: 0px;
     }
   }
 
@@ -158,8 +159,10 @@ export default {
     border: 1px solid darken(#282C2D, 10%);
     padding: 1.5rem;
     position: relative;
+    top: 50%;
+    transform: translateY(-50%);
     max-width: 300px;
-    margin: 45px auto;
+    margin: auto auto;
     display: flex;
     flex-direction: column;
     border-radius: 10px;

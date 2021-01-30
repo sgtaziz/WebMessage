@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin') }">
+  <div id="app" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin'), maximized: (maximized || !$store.state.acceleration) && process.platform !== 'darwin' }">
     <settings ref="settingsModal" @saved="connectWS"></settings>
     <div id="nav" :class="{ notrans: !$store.state.acceleration }">
       <div class="titlebar">
@@ -69,7 +69,9 @@ export default {
       notifSound: null,
       updateAvailable: false,
       search: '',
-      process: window.process
+      process: window.process,
+      maximized: false,
+      maximizing: false
     }
   },
   computed: {
@@ -81,7 +83,7 @@ export default {
   },
   methods: {
     getWindow () {
-      return window.remote.BrowserWindow.getFocusedWindow()
+      return window.remote.BrowserWindow.getAllWindows()[0]
     },
     closeWindow () {
       if (this.$store.state.minimize) {
@@ -94,8 +96,22 @@ export default {
       this.getWindow().minimize()
     },
     maximizeWindow () {
-      const window = this.getWindow()
-      !window.minimizedState ? window.unmaximize() : window.maximize()
+      this.maximizing = true
+      const win = this.getWindow()
+      if (this.maximized) {
+        win.restore()
+        win.setSize(700,600)
+        win.center()
+        if (process.platform !== 'darwin') document.body.style.borderRadius = null
+      } else {
+        win.maximize()
+        if (process.platform !== 'darwin') document.body.style.borderRadius = '0'
+      }
+
+      this.maximized = !this.maximized
+      setTimeout(() => {
+        this.maximizing = false
+      }, 50)
     },
     restart () {
       ipcRenderer.send('restart_app')
@@ -151,6 +167,36 @@ export default {
     })
 
     this.notifSound = new Audio('wm-audio://receivedText.mp3')
+
+    if (!(this.$store.state.macstyle || process.platform === 'darwin')) {
+      document.body.style.border = 'none'
+      document.body.style.borderRadius = '0'
+    }
+
+    if (!this.$store.state.acceleration && process.platform !== 'darwin') {
+      document.documentElement.style.backgroundColor = "black"
+    }
+
+    const win = this.getWindow()
+
+    window.addEventListener('resize', (e) => {
+      if (this.maximizing) return
+      if (this.maximized) {
+        win.restore()
+        if (process.platform !== 'darwin') document.body.style.borderRadius = null
+        this.maximized = false
+      }
+    })
+
+    win.on('move', (e) => {
+      e.preventDefault()
+      if (this.maximizing) return
+      if (this.maximized) {
+        win.restore()
+        if (process.platform !== 'darwin') document.body.style.borderRadius = null
+        this.maximized = false
+      }
+    })
   },
   socket: {
     fetchChats (data) {
@@ -265,7 +311,7 @@ html {
 
 body {
   margin: 0;
-  height: calc(100% - 3px);
+  height: calc(100% - 2px);
   max-height: 100%;
   width: calc(100% - 2px);
   background-color: rgba(29,29,29, 0);
@@ -280,10 +326,22 @@ body {
   text-align: center;
   color: #EBECEC;
   position: absolute;
-  top: 1px; left: 1px; right: 1px; bottom: 2px;
+  top: 1px; left: 1px; right: 1px; bottom: 1px;
   background-color: rgba(29,29,29, 0);
   border: 1px solid #4A4A4A;
   border-radius: 10px;
+
+  &.maximized {
+    border-radius: 0;
+
+    #nav {
+      border-radius: 0;
+    }
+
+    #content {
+      border-radius: 0;
+    }
+  }
 
   &.nostyle {
     background-color: rgba(40,40,40,1);
@@ -296,6 +354,7 @@ body {
       border-radius: 0 !important;
       margin-left: -1px;
       margin-top: -1px;
+      width: 312px;
     }
 
     #content {
@@ -432,7 +491,7 @@ body {
   float: left;
   background-color: rgba(29,29,29, 1);
   position:fixed;
-  top: 2px; left: 321px; right: 2px; bottom: 3px;
+  top: 2px; left: 321px; right: 2px; bottom: 2px;
   border-top-right-radius: 10px;
   border-bottom-right-radius: 10px;
   border-left: 1px solid #000;

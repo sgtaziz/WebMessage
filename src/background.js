@@ -1,6 +1,6 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, Tray, Menu, globalShortcut } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path')
@@ -11,11 +11,13 @@ const AutoLaunch = require('auto-launch')
 
 const persistentStore = new Store()
 const autoLauncher = new AutoLaunch({
-    name: "WebMessage"
+    name: "WebMessage",
+    isHidden: true
 })
 
 let tray = null
 let win = null
+let startMinimized = (process.argv || []).indexOf('--hidden') !== -1;
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -34,8 +36,10 @@ async function createWindow() {
     height: 600,
     minWidth: 700,
     minHeight: 600,
-    transparent: persistentStore.get('acceleration', true),
+    transparent: persistentStore.get('acceleration', true) && (persistentStore.get('macstyle', true) || process.platform === 'darwin'),
     frame: !(persistentStore.get('macstyle', true) || process.platform === 'darwin'),
+    fullscreenable: false,
+    maximizable: !(persistentStore.get('macstyle', true) || process.platform === 'darwin'),
     useContentSize: true,
     webPreferences: {
       // Use pluginOptions.nodeIntegration, leave this alone
@@ -49,6 +53,8 @@ async function createWindow() {
     icon: path.join(__static, 'icon.png')
   })
 
+  win.setResizable(true)
+
   if (process.platform !== 'darwin') {
     win.removeMenu()
   }
@@ -59,6 +65,21 @@ async function createWindow() {
 
   win.on('restore', () => {
     showWin()
+  })
+
+  win.on('maximize', (e) => {
+    e.preventDefault()
+  })
+
+  win.on('close', (e) => {
+    if (app.isQuitting) {
+      app.quit()
+    } else {
+      e.preventDefault()
+      win.setSkipTaskbar(true)
+      win.hide()
+      if (app.dock) app.dock.hide()
+    }
   })
 
   win.webContents.on('did-fail-load', async() => {
@@ -72,6 +93,12 @@ async function createWindow() {
   autoUpdater.on('update-downloaded', () => {
     win.webContents.send('update_downloaded')
   })
+
+  if (startMinimized) {
+    win.setSkipTaskbar(true)
+    win.hide()
+    if (app.dock) app.dock.hide()
+  }
 }
 
 async function loadURL () {
@@ -181,11 +208,13 @@ ipcMain.on('startup_check', () => {
 })
 
 ipcMain.on('reload_app', () => {
+  app.isQuitting = true
   app.relaunch()
   app.quit()
 })
 
 ipcMain.on('quit_app', () => {
+  app.isQuitting = true
   app.quit()
 })
 
@@ -207,6 +236,7 @@ app.whenReady().then(() => {
       showWin()
     }},
     { label: 'Quit', click: () => {
+      app.isQuitting = true
       app.quit()
     }}
   ])
