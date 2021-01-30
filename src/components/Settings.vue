@@ -15,6 +15,11 @@
         </label>
         <hr>
         <label class="switch">
+          <input type="checkbox" v-model="playsound">
+          <i></i>
+          <div>Custom notification sound</div>
+        </label>
+        <label class="switch">
           <input type="checkbox" v-model="startup">
           <i></i>
           <div>Launch on startup</div>
@@ -55,6 +60,7 @@ export default {
       ipAddress: '',
       port: null,
       ssl: false,
+      playsound: false,
       launchOnStartup: false,
       minimize: true,
       macstyle: true,
@@ -71,6 +77,7 @@ export default {
       this.$store.commit('setIPAddress', this.ipAddress)
       this.$store.commit('setPort', this.port)
       this.$store.commit('setSSL', this.ssl)
+      this.$store.commit('setPlaySound', this.playsound)
       this.$store.commit('setStartup', this.startup)
       this.$store.commit('setMinimize', this.minimize)
       this.$store.commit('setMacStyle', this.macstyle)
@@ -93,6 +100,7 @@ export default {
       this.ipAddress = this.$store.state.ipAddress
       this.port = this.$store.state.port
       this.ssl = this.$store.state.ssl
+      this.playsound = this.$store.state.playsound
       this.startup = this.$store.state.startup
       this.minimize = this.$store.state.minimize
       this.macstyle = this.$store.state.macstyle

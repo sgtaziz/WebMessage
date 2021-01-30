@@ -14,6 +14,7 @@ export default new Vuex.Store({
     ipAddress: persistentStore.get('ipAddress', ''),
     port: persistentStore.get('port', 8180),
     ssl: persistentStore.get('ssl', true),
+    playsound: persistentStore.get('playsound', true),
     startup: persistentStore.get('startup', false),
     minimize: persistentStore.get('minimize', true),
     macstyle: persistentStore.get('macstyle', true),
@@ -36,6 +37,10 @@ export default new Vuex.Store({
     setSSL(state, ssl) {
       state['ssl'] = ssl
       persistentStore.set('ssl', ssl)
+    },
+    setPlaySound(state, playsound) {
+      state['playsound'] = playsound
+      persistentStore.set('playsound', playsound)
     },
     setStartup(state, startup) {
       state['startup'] = startup

@@ -173,7 +173,7 @@ export default {
       document.body.style.borderRadius = '0'
     }
 
-    if (!this.$store.state.acceleration && process.platform !== 'darwin') {
+    if (!this.$store.state.acceleration) {
       document.documentElement.style.backgroundColor = "black"
     }
 
@@ -224,10 +224,10 @@ export default {
         const notification = {
           title: messageData.name,
           body: messageData.text,
-          silent: true
+          silent: this.$store.state.playsound
         }
 
-        this.notifSound.play()
+        if (this.$store.state.playsound) this.notifSound.play()
         let notif = new remote.Notification(notification)
         notif.on('click', (event, arg) => {
           if (chatData && chatData.id) {
