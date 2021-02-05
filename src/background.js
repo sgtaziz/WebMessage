@@ -50,7 +50,8 @@ async function createWindow() {
       enableRemoteModule: true,
       devTools: isDevelopment && !process.env.IS_TEST
     },
-    icon: path.join(__static, 'icon.png')
+    icon: path.join(__static, 'icon.png'),
+    title: 'WebMessage'
   })
 
   win.setResizable(true)
@@ -99,6 +100,8 @@ async function createWindow() {
     win.hide()
     if (app.dock) app.dock.hide()
   }
+
+  win.webContents.send('windowObj', win)
 }
 
 async function loadURL () {
@@ -156,9 +159,6 @@ app.on('ready', async () => {
     // can be found within the vue-devtools project.
     require('vue-devtools').install()
   }
-
-  createWindow()
-  registerLocalAudioProtocol()
 })
 
 // Exit cleanly on request from parent process in development mode.
@@ -180,6 +180,7 @@ app.commandLine.appendSwitch('ignore-certificate-errors', 'true')
 
 ipcMain.on('loaded', (event) => {
   autoUpdater.checkForUpdatesAndNotify()
+  win.webContents.send('win_id', win.id)
 })
 
 ipcMain.on('app_version', (event) => {
@@ -228,26 +229,43 @@ ipcMain.on('show_win', () => {
   showWin()
 })
 
-app.whenReady().then(() => {
-  tray = new Tray(path.join(__static, 'trayicon.png'))
+const gotTheLock = app.requestSingleInstanceLock()
 
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Open WebMessage', click: () => {
-      showWin()
-    }},
-    { label: 'Quit', click: () => {
-      app.isQuitting = true
-      app.quit()
-    }}
-  ])
-
-  tray.on('double-click', () => {
+if (!gotTheLock) {
+  app.quit()
+} else {
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
     showWin()
   })
 
-  tray.setToolTip('WebMessage')
-  tray.setContextMenu(contextMenu)
-})
+  app.whenReady().then(() => {
+    createWindow()
+    registerLocalAudioProtocol()
+    
+    tray = new Tray(path.join(__static, 'trayicon.png'))
+
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Open WebMessage', click: () => {
+          showWin()
+        }
+      },
+      {
+        label: 'Quit', click: () => {
+          app.isQuitting = true
+          app.quit()
+        }
+      }
+    ])
+
+    tray.on('double-click', () => {
+      showWin()
+    })
+
+    tray.setToolTip('WebMessage')
+    tray.setContextMenu(contextMenu)
+  })
+}
 
 function showWin () {
   if (!win) createWindow()
