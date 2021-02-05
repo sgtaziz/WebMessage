@@ -29,3 +29,4 @@ script:
     yarn run publish
 before_cache:
   - rm -rf $HOME/.cache/electron-builder/wine
+  
