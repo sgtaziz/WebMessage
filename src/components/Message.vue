@@ -25,7 +25,7 @@
               <template v-for="(text, i) in msg.texts">
               
                 <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
-                  <template v-if="attachment[0] != ''">
+                  <template v-if="attachment[0] != '' && !attachment[0].includes('.pluginPayloadAttachment')">
                     <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
                     <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
                     <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
@@ -37,7 +37,7 @@
                   :key="i"
                   :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
                   v-if="$options.filters.twemoji(text.text) != ''">
-                  <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)"></span>
+                  <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
                 </div>
               </template>
             </div>
@@ -167,6 +167,7 @@ export default {
   },
   methods: {
     isImage(type) {
+      console.log(type)
       return type.includes('image/')
     },
     isVideo(type) {
@@ -261,10 +262,10 @@ export default {
     autoResize (value) {
       var el = document.getElementById('twemoji-textarea')
 
-      if (!this.canSend) {
-        el.innerHTML = this.messageText[this.$route.params.id]
-        return
-      }
+      // if (!this.canSend) {
+      //   el.innerHTML = this.messageText[this.$route.params.id]
+      //   return
+      // }
 
       this.messageText[this.$route.params.id] = value
 
@@ -289,20 +290,20 @@ export default {
         attachments: this.$refs.uploadButton.attachments,
         address: this.messages[0] ? this.messages[0].address : this.receiver
       }
+      
+      document.getElementById("twemoji-textarea").innerHTML = ""
+      this.messageText[this.$route.params.id] = ""
 
       axios.post(this.$store.getters.httpURI+'/sendText', textObj)
         .then(response => {
-          document.getElementById("twemoji-textarea").innerHTML = ""
-          this.messageText[this.$route.params.id] = ""
           if (this.$refs.uploadButton) {
             this.$refs.uploadButton.clear()
           }
-          this.canSend = true
 
+          this.canSend = true
           this.autoResize()
         })
         .catch(error => {
-          console.log(error)
           alert("There was an error while sending your text.\n" + error)
           this.canSend = true
         })
@@ -315,6 +316,12 @@ export default {
         container.scrollTop = scrollTo
 
         if (document.getElementById('twemoji-textarea') && !this.lastHeight) document.getElementById('twemoji-textarea').focus()
+
+        $(document).off('click', 'a[href^="http"]')
+        $(document).on('click', 'a[href^="http"]', function(event) {
+          event.preventDefault()
+          shell.openExternal(this.href)
+        })
       }
     },
     autoCompleteHooks () {
@@ -821,6 +828,10 @@ export default {
     position: relative;
     overflow-wrap: break-word;
 
+    a {
+      color: #2284FF;
+    }
+
     &.last {
       margin-bottom: 10px;
 
@@ -873,6 +884,10 @@ export default {
     position: relative;
     max-width: 75%;
     overflow-wrap: break-word;
+
+    a {
+      color: white;
+    }
 
     &.last {
       margin-bottom: 10px;

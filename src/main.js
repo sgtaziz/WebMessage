@@ -8,6 +8,9 @@ import axios from 'axios'
 import VueNativeSock from 'vue-native-websocket'
 import VueFeather from 'vue-feather'
 import Twemoji from './plugins/Twemoji'
+import linkify from 'vue-linkify'
+import $ from 'jquery'
+window.$ = $
 
 const https = require('https')
 
@@ -31,6 +34,8 @@ Vue.prototype.$http = axios.create({
 })
 
 Vue.mixin(mixins)
+
+Vue.directive('linkified', linkify)
 
 axios.defaults.headers.common['Authorization'] = store.state.password
 
