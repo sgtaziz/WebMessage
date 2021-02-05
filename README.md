@@ -1,4 +1,4 @@
-# WebMessage
+# WebMessage [![Build Status](https://travis-ci.org/sgtaziz/WebMessage.svg?branch=main)](https://travis-ci.org/sgtaziz/WebMessage)
 A messaging client, meant to work with the WebMessage tweak for jailbroken iOS devices.
 
 ## Screenshots
