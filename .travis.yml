@@ -1,4 +1,4 @@
-if: commit_message =~ ^Release v$
+if: commit_message =~ ^Release
 
 matrix:
   include:
