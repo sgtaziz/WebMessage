@@ -71,7 +71,8 @@ export default {
       search: '',
       process: window.process,
       maximized: false,
-      maximizing: false
+      maximizing: false,
+      win: null
     }
   },
   computed: {
@@ -82,9 +83,6 @@ export default {
     }
   },
   methods: {
-    getWindow () {
-      return window.remote.BrowserWindow.getAllWindows()[0]
-    },
     closeWindow () {
       if (this.$store.state.minimize) {
         ipcRenderer.send('minimizeToTray')
@@ -93,18 +91,17 @@ export default {
       }
     },
     minimizeWindow () {
-      this.getWindow().minimize()
+      this.win.minimize()
     },
     maximizeWindow () {
       this.maximizing = true
-      const win = this.getWindow()
       if (this.maximized) {
-        win.restore()
-        win.setSize(700,600)
-        win.center()
+        this.win.restore()
+        this.win.setSize(700,600)
+        this.win.center()
         if (process.platform !== 'darwin') document.body.style.borderRadius = null
       } else {
-        win.maximize()
+        this.win.maximize()
         if (process.platform !== 'darwin') document.body.style.borderRadius = '0'
       }
 
@@ -166,6 +163,29 @@ export default {
       this.updateAvailable = true
     })
 
+    ipcRenderer.on('win_id', (e, id) => {
+      this.win = window.remote.BrowserWindow.fromId(id)
+
+      window.addEventListener('resize', (e) => {
+        if (this.maximizing) return
+        if (this.maximized) {
+          this.win.restore()
+          if (process.platform !== 'darwin') document.body.style.borderRadius = null
+          this.maximized = false
+        }
+      })
+
+      this.win.on('move', (e) => {
+        e.preventDefault()
+        if (this.maximizing) return
+        if (this.maximized) {
+          this.win.restore()
+          if (process.platform !== 'darwin') document.body.style.borderRadius = null
+          this.maximized = false
+        }
+      })
+    })
+
     this.notifSound = new Audio('wm-audio://receivedText.mp3')
 
     if (!(this.$store.state.macstyle || process.platform === 'darwin')) {
@@ -176,27 +196,6 @@ export default {
     if (!this.$store.state.acceleration) {
       document.documentElement.style.backgroundColor = "black"
     }
-
-    const win = this.getWindow()
-
-    window.addEventListener('resize', (e) => {
-      if (this.maximizing) return
-      if (this.maximized) {
-        win.restore()
-        if (process.platform !== 'darwin') document.body.style.borderRadius = null
-        this.maximized = false
-      }
-    })
-
-    win.on('move', (e) => {
-      e.preventDefault()
-      if (this.maximizing) return
-      if (this.maximized) {
-        win.restore()
-        if (process.platform !== 'darwin') document.body.style.borderRadius = null
-        this.maximized = false
-      }
-    })
   },
   socket: {
     fetchChats (data) {
@@ -224,7 +223,8 @@ export default {
         const notification = {
           title: messageData.name,
           body: messageData.text,
-          silent: this.$store.state.playsound
+          silent: this.$store.state.playsound,
+          icon: __static + '/icon.png'
         }
 
         if (this.$store.state.playsound) this.notifSound.play()
