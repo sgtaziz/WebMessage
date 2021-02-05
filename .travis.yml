@@ -16,6 +16,18 @@ cache:
 
 script:
   - |
+    export CERTIFICATE_P12=cert.p12;
+    echo $MACOS_CERT_P12 | base64 --decode > $CERTIFICATE_P12;
+    export KEYCHAIN=build.keychain;
+    security create-keychain -p travis $KEYCHAIN;
+    security default-keychain -s $KEYCHAIN;
+    security unlock-keychain -p travis $KEYCHAIN;
+    security import ./assets/certs/apple.cer -k ~/Library/Keychains/$KEYCHAIN -T /usr/bin/codesign
+    security import ./assets/certs/dac.cer -k ~/Library/Keychains/$KEYCHAIN -T /usr/bin/codesign
+    security import $CERTIFICATE_P12 -k $KEYCHAIN -P $MACOS_CERT_PASSWORD -T /usr/bin/codesign 2>&1 >/dev/null;
+    rm $CERTIFICATE_P12;
+    security set-key-partition-list -S apple-tool:,apple: -s -k travis $KEYCHAIN
+    security find-identity -v -p codesigning
     yarn run publish
 before_cache:
   - rm -rf $HOME/.cache/electron-builder/wine
