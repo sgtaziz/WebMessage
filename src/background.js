@@ -189,6 +189,7 @@ ipcMain.on('app_version', (event) => {
 
 ipcMain.on('restart_app', () => {
   setImmediate(() => {
+    app.isQuitting = true
     autoUpdater.quitAndInstall()
   })
 })
