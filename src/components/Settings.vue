@@ -110,7 +110,6 @@ export default {
             this.$emit('saved')
             this.relayColor = 'rgba(255,0,0,0.5)'
           }
-          console.log("Error:", err)
         })
         .on('warning', (err) => {
           if (err.message.includes('No devices connected')) {
@@ -120,7 +119,6 @@ export default {
             this.$emit('saved')
             this.relayColor = 'rgba(255,0,0,0.5)'
           }
-          console.log("Warning:", err)
         })
         .on('attached', () => {
           this.relayMessage = "Tunneling is active and your device is attached. We will automatically setup the settings for you."
