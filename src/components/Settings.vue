@@ -145,7 +145,6 @@ export default {
       this.show = false
       this.initTunnel()
 
-      this.$emit('saved')
       if (reloadApp) ipcRenderer.send('reload_app')
     },
     closeModal() {
