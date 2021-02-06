@@ -167,7 +167,6 @@ export default {
   },
   methods: {
     isImage(type) {
-      console.log(type)
       return type.includes('image/')
     },
     isVideo(type) {

@@ -130,7 +130,6 @@ export default {
       this.$disconnect()
 
       const baseURI = this.$store.getters.baseURI
-      console.log("Connecting to: "+baseURI)
       this.$connect(baseURI, {
         format: 'json',
         reconnection: true,
@@ -141,7 +140,21 @@ export default {
     },
     composeMessage () {
       this.$router.push('/message/new')
+    },
+    onMove (e) {
+      e.preventDefault()
+      if (this.maximizing) return
+      if (this.maximized) {
+        this.win.restore()
+        if (process.platform !== 'darwin') document.body.style.borderRadius = null
+        this.maximized = false
+      }
     }
+  },
+  beforeDestroy () {
+    $(window).off('resize')
+    this.win.removeListener('move', this.onMove)
+    ipcRenderer.removeAllListeners('win_id')
   },
   mounted () {
     this.connectWS()
@@ -176,15 +189,7 @@ export default {
         }
       })
 
-      this.win.on('move', (e) => {
-        e.preventDefault()
-        if (this.maximizing) return
-        if (this.maximized) {
-          this.win.restore()
-          if (process.platform !== 'darwin') document.body.style.borderRadius = null
-          this.maximized = false
-        }
-      })
+      this.win.on('move', this.onMove)
     })
 
     this.notifSound = new Audio('wm-audio://receivedText.mp3')

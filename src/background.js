@@ -101,7 +101,7 @@ async function createWindow() {
     if (app.dock) app.dock.hide()
   }
 
-  win.webContents.send('windowObj', win)
+  win.webContents.send('win_id', win.id)
 }
 
 async function loadURL () {
@@ -157,7 +157,9 @@ app.on('ready', async () => {
     // A directory named 'vender' in the project root
     // is required for this to work. The correct file
     // can be found within the vue-devtools project.
-    require('vue-devtools').install()
+    require('vue-devtools').install().catch((err) => {
+      console.log(err)
+    })
   }
 })
 
