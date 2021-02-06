@@ -19,7 +19,8 @@ export default new Vuex.Store({
     startup: persistentStore.get('startup', false),
     minimize: persistentStore.get('minimize', true),
     macstyle: persistentStore.get('macstyle', true),
-    acceleration: persistentStore.get('acceleration', true)
+    acceleration: persistentStore.get('acceleration', true),
+    messagesCache: []
   },
   mutations: {
     setPassword(state, password) {
@@ -63,6 +64,10 @@ export default new Vuex.Store({
     setAcceleration(state, acceleration) {
       state['acceleration'] = acceleration
       persistentStore.set('acceleration', acceleration)
+    },
+    addMessages(state, messages) {
+      if (!state['messagesCache'][messages.id]) state['messagesCache'][messages.id] = []
+      state['messagesCache'][messages.id] = messages.data
     }
   },
   getters: {

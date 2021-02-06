@@ -149,6 +149,21 @@ export default {
         if (process.platform !== 'darwin') document.body.style.borderRadius = null
         this.maximized = false
       }
+    },
+    cacheMessages () {
+      if (this.$socket && this.$socket.readyState == 1) {
+        for (let i = 0; i < this.chats.length; i++) {
+          let chat = this.chats[i]
+          this.sendSocket({ action: 'fetchMessages', data: {
+              id: chat.address,
+              offset: `0`,
+              limit: `25`
+            }
+          })
+        }
+      } else {
+        setTimeout(this.cacheMessages, 1000)
+      }
     }
   },
   beforeDestroy () {
@@ -209,6 +224,12 @@ export default {
       else this.chats.push(...data)
       this.offset += this.limit
       this.loading = false
+      this.cacheMessages()
+    },
+    fetchMessages (data) {
+      if (data && data[0] && !this.$store.state.messagesCache[data[0].chatId]) {
+        this.$store.commit('addMessages', { id: data[0].chatId, data: data })
+      }
     },
     newMessage (data) {
       var chatData = data.chat[0]
@@ -225,26 +246,32 @@ export default {
 
       var messageData = data.message[0]
 
-      if (messageData && messageData.sender != 1 && remote.Notification.isSupported()) {
-        const notification = {
-          title: messageData.name,
-          body: messageData.text,
-          silent: this.$store.state.playsound,
-          icon: __static + '/icon.png'
+      if (messageData) {
+        if (this.$store.state.messagesCache[messageData.chatId]) {
+          if (this.$store.state.messagesCache[messageData.chatId].findIndex(obj => obj.id == messageData.id) != -1) return
+          this.$store.state.messagesCache[messageData.chatId].unshift(messageData)
         }
 
-        if (this.$store.state.playsound) this.notifSound.play()
-        let notif = new remote.Notification(notification)
-        notif.on('click', (event, arg) => {
-          if (chatData && chatData.id) {
-            ipcRenderer.send('show_win')
-            this.$router.push('/message/'+messageData.chatId)
+        if (messageData.sender != 1 && remote.Notification.isSupported()) {
+          const notification = {
+            title: messageData.name,
+            body: messageData.text,
+            silent: this.$store.state.playsound,
+            icon: __static + '/icon.png'
           }
-        })
-        notif.show()
 
-      } else if (!remote.Notification.isSupported()) {
-        console.log('Notifications are not supported on this system.')
+          if (this.$store.state.playsound) this.notifSound.play()
+          let notif = new remote.Notification(notification)
+          notif.on('click', (event, arg) => {
+            if (chatData && chatData.id) {
+              ipcRenderer.send('show_win')
+              this.$router.push('/message/'+messageData.chatId)
+            }
+          })
+          notif.show()
+        } else if (messageData.sender != 1) {
+          console.log('Notifications are not supported on this system.')
+        }
       }
     },
     onopen () {
@@ -375,11 +402,11 @@ body {
 }
 
 .fade-enter-active {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.2s ease;
 }
 
 .fade-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity 0.2s ease;
   opacity: 0;
 }
 

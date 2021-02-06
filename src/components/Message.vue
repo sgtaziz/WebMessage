@@ -244,6 +244,12 @@ export default {
       return formattedDate
     },
     fetchMessages () {
+      if (this.offset == 0 && this.$store.state.messagesCache[this.$route.params.id]) {
+        this.messages = this.$store.state.messagesCache[this.$route.params.id].map(o => ({...o}))
+        this.postLoad()
+        return
+      }
+      
       if (this.$socket && this.$socket.readyState == 1) {
         if (this.loading) return
         this.loading = true
@@ -348,20 +354,8 @@ export default {
     removeAttachment (i) {
       if (!this.canSend) return
       this.$refs.uploadButton.remove(i)
-    }
-  },
-  mounted () {
-    this.$nextTick(this.autoCompleteHooks)
-    this.fetchMessages()
-  },
-  socket: {
-    fetchMessages (data) {
-      if (this.$route.params.id == 'new') return
-      if (data && data[0] && data[0].chatId != this.$route.params.id) return
-
-      if (this.offset == 0) this.messages = data
-      else this.messages.push(...data)
-
+    },
+    postLoad () {
       if (this.offset == 0) {
         setTimeout(() => {
           if (this.$refs.messages) {
@@ -388,6 +382,24 @@ export default {
 
       this.offset += this.limit
       this.loading = false
+    }
+  },
+  mounted () {
+    this.$nextTick(this.autoCompleteHooks)
+    this.fetchMessages()
+  },
+  socket: {
+    fetchMessages (data) {
+      if (this.$route.params.id == 'new') return
+      if (data && data[0] && data[0].chatId != this.$route.params.id) return
+
+      if (this.offset == 0 && !this.$store.state.messagesCache[this.$route.params.id]) {
+        this.messages = data
+        this.$store.commit('addMessages', { id: this.$route.params.id, data: data })
+      }
+      else this.messages.push(...data)
+
+      this.postLoad()
     },
     newMessage (data) {
       var message = data.message
