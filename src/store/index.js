@@ -12,6 +12,7 @@ export default new Vuex.Store({
   state: {
     password: persistentStore.get('password', ''),
     ipAddress: persistentStore.get('ipAddress', ''),
+    fallbackIpAddress: persistentStore.get('fallbackIpAddress', ''),
     port: persistentStore.get('port', 8180),
     ssl: persistentStore.get('ssl', true),
     playsound: persistentStore.get('playsound', true),
@@ -29,6 +30,10 @@ export default new Vuex.Store({
     setIPAddress(state, ip) {
       state['ipAddress'] = ip
       persistentStore.set('ipAddress', ip)
+    },
+    setFallbackIPAddress(state, ip) {
+      state['fallbackIpAddress'] = ip
+      persistentStore.set('fallbackIpAddress', ip)
     },
     setPort(state, port) {
       state['port'] = port

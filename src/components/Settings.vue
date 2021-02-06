@@ -6,7 +6,15 @@
       <div class="modal__dialog">
         <h3>Settings</h3>
         <input type="password" placeholder="Password" class="textinput" v-model="password" />
-        <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" />
+        <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress"/>
+        <div class="tunnelToggle">
+          <feather type="circle" size="20" @click="toggleTunnel" @mouseover="showTunnelDesc = true" @mouseout="showTunnelDesc = false"
+             :fill="relayColor"
+          ></feather>
+          <div class="desc" v-show="showTunnelDesc">
+            {{ relayMessage }}
+          </div>
+        </div>
         <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
         <label class="switch">
           <input type="checkbox" v-model="ssl">
@@ -51,6 +59,8 @@
 </template>
 
 <script>
+import usbmux from 'usbmux'
+
 export default {
   name: "Settings",
   data() {
@@ -58,7 +68,7 @@ export default {
       show: false,
       password: '',
       ipAddress: '',
-      port: null,
+      port: 8180,
       ssl: false,
       playsound: false,
       launchOnStartup: false,
@@ -66,15 +76,67 @@ export default {
       macstyle: true,
       acceleration: true,
       version: '',
-      process: window.process
+      process: window.process,
+      showTunnelDesc: false,
+      relay: null,
+      relayStatus: -1,
+      relayMessage: "Tunneling is currently deactivated. No device is attached.",
+      relayColor: 'rgba(152,152,152,0.5)'
+    }
+  },
+  beforeDestroy () {
+    if (this.relay) {
+      console.log('Destroying old tunnel...')
+      this.relay.stop()
     }
   },
   methods: {
+    toggleTunnel () {
+    },
+    initTunnel () {
+      if (this.relay) {
+        console.log('Destroying old tunnel...')
+        this.relay.stop()
+      }
+
+      console.log('Initiating tunnel...')
+
+      this.relay = new usbmux.Relay(this.port, this.port)
+        .on('error', (err) => {
+          if (err.message.includes('No devices connected')) {
+            this.relayMessage = "Tunneling is currently deactivated. No device is attached. Ensure you have iTunes installed."
+            this.relayStatus = 0
+            this.$store.commit('setIPAddress', this.ipAddress)
+            this.$emit('saved')
+            this.relayColor = 'rgba(255,0,0,0.5)'
+          }
+          console.log("Error:", err)
+        })
+        .on('warning', (err) => {
+          if (err.message.includes('No devices connected')) {
+            this.relayMessage = "Tunneling is currently deactivated. No device is attached."
+            this.relayStatus = 0
+            this.$store.commit('setIPAddress', this.ipAddress)
+            this.$emit('saved')
+            this.relayColor = 'rgba(255,0,0,0.5)'
+          }
+          console.log("Warning:", err)
+        })
+        .on('attached', () => {
+          this.relayMessage = "Tunneling is active and your device is attached. We will automatically setup the settings for you."
+          this.relayStatus = 1
+          this.$store.commit('setIPAddress', '127.0.0.1')
+          if (this.$socket && this.$socket.readyState == 1) window.location.reload()
+          setTimeout(() => { this.$emit('saved') }, 10)
+          this.relayColor = 'rgba(0,255,0,0.5)'
+        })
+    },
     saveModal() {
       let reloadApp = this.$store.state.macstyle != this.macstyle || this.$store.state.acceleration != this.acceleration
 
       this.$store.commit('setPassword', this.password)
       this.$store.commit('setIPAddress', this.ipAddress)
+      this.$store.commit('setFallbackIPAddress', this.ipAddress)
       this.$store.commit('setPort', this.port)
       this.$store.commit('setSSL', this.ssl)
       this.$store.commit('setPlaySound', this.playsound)
@@ -83,21 +145,20 @@ export default {
       this.$store.commit('setMacStyle', this.macstyle)
       this.$store.commit('setAcceleration', this.acceleration)
       this.show = false
+      this.initTunnel()
 
       this.$emit('saved')
       if (reloadApp) ipcRenderer.send('reload_app')
     },
     closeModal() {
-      this.loadValues()
       this.show = false
     },
     openModal() {
-      this.loadValues()
       this.show = true
     },
     loadValues() {
       this.password = this.$store.state.password
-      this.ipAddress = this.$store.state.ipAddress
+      this.ipAddress = this.$store.state.fallbackIpAddress != '' ? this.$store.state.fallbackIpAddress : this.ipAddress
       this.port = this.$store.state.port
       this.ssl = this.$store.state.ssl
       this.playsound = this.$store.state.playsound
@@ -105,6 +166,7 @@ export default {
       this.minimize = this.$store.state.minimize
       this.macstyle = this.$store.state.macstyle
       this.acceleration = this.$store.state.acceleration
+      this.initTunnel()
     },
     enforceConstraints() {
       var el = this.$refs.portField
@@ -136,6 +198,48 @@ export default {
   font-size: 12px;
   margin-bottom: -18px;
   color: gray;
+}
+
+.tunnelToggle {
+  margin-top: -38px;
+  padding-bottom: 14px;
+  width: 20px;
+  position: relative;
+  left: 266px;
+
+  .desc {
+    position: absolute;
+    top: -27px;
+    right: 30px;
+    width: 180px;
+    height: 55px;
+    text-align: left;
+    background-color: rgba(0,0,0,0.6);
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 13px;
+    display: inherit !important; /* override v-show display: none */
+    transition: opacity 0.3s;
+
+    &[style*="display: none;"] {
+      opacity: 0;
+      pointer-events: none; /* disable user interaction */
+      user-select: none; /* disable user selection */
+    }
+
+    &:after {
+      content: "";
+      width: 0;
+      height: 0;
+      border-top: 10px solid transparent;
+      border-bottom: 10px solid transparent;
+      border-left: 10px solid rgba(0,0,0,0.6);
+      position: relative;
+      display: inline-flex;
+      bottom: 30px;
+      left: 95px;
+    }
+  }
 }
 
 .modal {

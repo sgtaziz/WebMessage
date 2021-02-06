@@ -127,9 +127,10 @@ export default {
       this.chats = []
       this.offset = 0
       this.loading = false
+      this.$disconnect()
 
       const baseURI = this.$store.getters.baseURI
-      this.$disconnect()
+      console.log("Connecting to: "+baseURI)
       this.$connect(baseURI, {
         format: 'json',
         reconnection: true,
