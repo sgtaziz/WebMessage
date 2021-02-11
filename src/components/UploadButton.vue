@@ -33,7 +33,7 @@ export default {
       if (this.enableiMessageAttachments) {
         return 'iMessage attachments size cannot be larger than '+this.sizeLimit+'MB.'
       } else {
-        return 'SMS attachments size cannot be larger than '+this.sizeLimit+'kB.'
+        return 'SMS attachments size cannot be larger than '+this.sizeLimit*1000+'kB.'
       }
     }
   },
@@ -61,15 +61,17 @@ export default {
       this.progress = 0
       this.$emit('filesChanged')
     },
-    async filesChanged(e) {
-      let attachments = []
+    async filesChanged() {
+      let attachments = this.attachments || []
       let totalSize = 0
+      let targetFiles = this.$refs.fileInput.files
+
       this.progress = 0
       this.isReading = true
       
-      for (let i = 0; i < e.target.files.length; i++) {
+      for (let i = 0; i < targetFiles.length; i++) {
         let attachment = {}
-        let file = e.target.files[i]
+        let file = targetFiles[i]
         
         totalSize += file.size
         attachment.name = file.name
@@ -81,13 +83,14 @@ export default {
         })
 
         attachments.push(attachment)
-        this.progress = Math.round((attachments.length/e.target.files.length)*100)
+        this.progress = Math.round((attachments.length/targetFiles.length)*100)
       }
 
       if (totalSize > (this.sizeLimit * 1e6)) {
         this.attachments = null
         this.isReading = false
         alert(this.attachmentsTooBig)
+        this.$emit('filesChanged')
         return
       }
 

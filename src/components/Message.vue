@@ -1,6 +1,6 @@
 <template>
   <transition name="fade" mode="out-in">
-    <div class="messageContainer" :key="$route.params.id">
+    <div class="messageContainer" ref="messageContainer" :key="$route.params.id">
       <div class="titlebar">
         <div class="receiverContainer">
           <span class="label">To:</span>
@@ -58,7 +58,7 @@
             :emojiGroups="emojiGroups"
             :initialContent="messageText[$route.params.id]"
             :class="hasAttachments ? 'withAttachments' : ''"
-            @enterKey="sendText(messageText[$route.params.id])">
+            @enterKey="sendText">
             <template v-slot:twemoji-picker-button>
               <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
             </template>
@@ -272,7 +272,7 @@ export default {
       //   return
       // }
 
-      this.messageText[this.$route.params.id] = value
+      if (value) this.messageText[this.$route.params.id] = value
 
       this.$nextTick(() => {
         let scrollHeight = el.scrollHeight
@@ -283,7 +283,8 @@ export default {
         }
       })
     },
-    sendText (messageText) {
+    sendText () {
+      let messageText = this.messageText[this.$route.params.id]
       if (!messageText) messageText = ''
       messageText = messageText.trim()
       if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
@@ -306,7 +307,7 @@ export default {
           }
 
           this.canSend = true
-          this.autoResize()
+          this.autoResize('')
         })
         .catch(error => {
           alert("There was an error while sending your text.\n" + error)
@@ -350,6 +351,7 @@ export default {
     },
     previewFiles () {
       this.hasAttachments = this.$refs.uploadButton.attachments != null
+      this.autoResize()
     },
     removeAttachment (i) {
       if (!this.canSend) return
@@ -382,6 +384,41 @@ export default {
 
       this.offset += this.limit
       this.loading = false
+
+      this.$nextTick(() => {
+        var el = document.getElementById('twemoji-textarea')
+        if (el) {
+          el.addEventListener('paste', e => {
+            if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+              let text = e.clipboardData.getData('Text')
+              let files = e.clipboardData.files
+              this.handleFiles(files, text, e.target)
+            }
+          })
+          el.addEventListener('drop', e => {
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              let files = e.dataTransfer.files
+              this.handleFiles(files)
+            }
+          })
+        }
+      })
+    },
+    handleFiles (files, text, target) {
+      if (text && text.length > 0) {
+        this.$nextTick(() => {
+          let newText = target.innerHTML.slice(0, window.getSelection().anchorOffset-text.length) + target.innerHTML.slice(window.getSelection().anchorOffset)
+          target.innerHTML = newText
+          if (newText.length > 0) {
+            let sel = window.getSelection()
+            sel.collapse(target.lastChild, newText.length)
+          }
+          this.autoResize(newText)
+        })
+      }
+
+      this.$refs.uploadButton.$refs.fileInput.files = files
+      this.$refs.uploadButton.filesChanged()
     }
   },
   mounted () {
