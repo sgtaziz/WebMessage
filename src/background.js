@@ -183,6 +183,7 @@ app.commandLine.appendSwitch('ignore-certificate-errors', 'true')
 ipcMain.on('loaded', (event) => {
   autoUpdater.checkForUpdatesAndNotify()
   win.webContents.send('win_id', win.id)
+  registerShortcuts()
 })
 
 ipcMain.on('app_version', (event) => {
@@ -292,5 +293,13 @@ function registerLocalAudioProtocol () {
         error
       )
     }
+  })
+}
+
+function registerShortcuts () {
+  [1,2,3,4,5,6,7,8,9,'n'].forEach((key) => {
+    globalShortcut.register('CommandOrControl+'+key, () => {
+      win.webContents.send('navigateTo', key)
+    })
   })
 }

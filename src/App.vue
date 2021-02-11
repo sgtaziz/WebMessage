@@ -225,6 +225,17 @@ export default {
       this.updateAvailable = true
     })
 
+    ipcRenderer.on('navigateTo', (sender, id) => {
+      if (isNaN(id)) {
+        this.$router.push('/message/new').catch(()=>{})
+      } else {
+        let arrayId = parseInt(id) - 1
+        if (this.chats[arrayId]) {
+          this.$router.push('/message/'+this.chats[arrayId].address).catch(()=>{})
+        }
+      }
+    })
+
     ipcRenderer.on('win_id', (e, id) => {
       this.win = window.remote.BrowserWindow.fromId(id)
 
