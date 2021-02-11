@@ -14,6 +14,9 @@
             <span class="zoombutton"><span>+</span></span>
           </div>
         </div>
+        <div class="statusIndicator" style="margin-top: 1px;">
+          <feather type="circle" stroke="rgba(25,25,25,0.5)" :fill="statusColor" size="10"></feather>
+        </div>
         <div class="menuBtn">
           <feather type="settings" stroke="rgba(152,152,152,0.5)" size="20" @click="$refs.settingsModal.openModal()"></feather>
         </div>
@@ -72,7 +75,8 @@ export default {
       process: window.process,
       maximized: false,
       maximizing: false,
-      win: null
+      win: null,
+      status: 0 // 0 for disconnected, 1 for connecting, 2 for connected
     }
   },
   computed: {
@@ -80,6 +84,15 @@ export default {
       return this.chats.filter((chat) => {
         return chat.author.toLowerCase().includes(this.search.toLowerCase()) || chat.text.toLowerCase().includes(this.search.toLowerCase())
       })
+    },
+    statusColor () {
+      if (this.status == 0) {
+        return "rgba(255,0,0,0.8)"
+      } else if (this.status == 1) {
+        return "rgba(255,100,0,0.8)"
+      } else if (this.status == 2) {
+        return "rgba(0,255,0,0.5)"
+      }
     }
   },
   methods: {
@@ -128,12 +141,14 @@ export default {
       this.offset = 0
       this.loading = false
       this.$disconnect()
+      this.$store.commit('resetMessages')
 
       const baseURI = this.$store.getters.baseURI
       this.$connect(baseURI, {
         format: 'json',
         reconnection: true,
       })
+      this.$router.push('/').catch(()=>{})
     },
     setAsRead (chat) {
       chat.read = true
@@ -225,6 +240,7 @@ export default {
       this.offset += this.limit
       this.loading = false
       this.cacheMessages()
+      this.status = 2
     },
     fetchMessages (data) {
       if (data && data[0] && !this.$store.state.messagesCache[data[0].chatId]) {
@@ -279,12 +295,19 @@ export default {
     },
     onopen () {
       this.requestChats()
+      this.status = 1
     },
     onerror () {
       this.loading = false
+      this.status = 0
+      this.$store.commit('resetMessages')
+      this.$router.push('/').catch(()=>{})
     },
     onclose () {
       this.loading = false
+      this.status = 0
+      this.$store.commit('resetMessages')
+      this.$router.push('/').catch(()=>{})
     }
   }
 }
@@ -314,6 +337,12 @@ export default {
       filter: brightness(80%);
     }
   }
+}
+
+.statusIndicator {
+  width: auto;
+  float: right;
+  margin-right: 10px;
 }
 
 .textinput {
@@ -450,6 +479,7 @@ body {
   -webkit-app-region: no-drag;
   padding-left: 5px;
   padding-top: 3px;
+  padding-right: 20px;
   float: left;
   line-height: 0px;
 

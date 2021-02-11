@@ -9,6 +9,9 @@
             <autocomplete :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
           </span>
         </div>
+        <div class="closeBtn" @click="$router.push('/')">
+          <feather type="x-circle" stroke="rgba(255,255,255,0.6)" size="16"></feather>
+        </div>
       </div>
 
       <div v-if="(!messages || messages.length == 0) && $route.params.id != 'new'" style="height:100%;padding:14px;">
@@ -779,6 +782,20 @@ export default {
     min-height: 39px;
     background-color: #373737;
     border-bottom: 2px solid #1d1d1d;
+
+    .closeBtn {
+      position: absolute;
+      top: 16px;
+      right: 8px;
+
+      .feather {
+        cursor: pointer;
+
+        &:hover {
+          filter: brightness(80%);
+        }
+      }
+    }
   }
 }
 

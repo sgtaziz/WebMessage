@@ -73,6 +73,9 @@ export default new Vuex.Store({
     addMessages(state, messages) {
       if (!state['messagesCache'][messages.id]) state['messagesCache'][messages.id] = []
       state['messagesCache'][messages.id] = messages.data
+    },
+    resetMessages(state) {
+      state['messagesCache'] = []
     }
   },
   getters: {
