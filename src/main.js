@@ -10,6 +10,7 @@ import VueFeather from 'vue-feather'
 import Twemoji from './plugins/Twemoji'
 import linkify from 'vue-linkify'
 import $ from 'jquery'
+import Popover from 'vue-js-popover'
 window.$ = $
 
 const https = require('https')
@@ -18,13 +19,13 @@ Vue.use(Twemoji, {
   extension: '.svg',
   size: 'svg'
 })
-
 Vue.use(VueNativeSock, 'ws://', {
   format: 'json',
   reconnection: true,
   connectManually: true,
 })
 Vue.use(VueFeather)
+Vue.use(Popover, { tooltip: true })
 
 Vue.config.productionTip = false
 Vue.prototype.$http = axios.create({

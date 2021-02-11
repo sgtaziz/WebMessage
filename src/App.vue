@@ -15,8 +15,11 @@
           </div>
         </div>
         <div class="statusIndicator" style="margin-top: 1px;">
-          <feather type="circle" stroke="rgba(25,25,25,0.5)" :fill="statusColor" size="10"></feather>
+          <feather type="circle" stroke="rgba(25,25,25,0.5)" :fill="statusColor" size="10" v-popover:status.bottom></feather>
         </div>
+        <popover name="status" event="hover" transition="fade">
+          {{ statusText }}
+        </popover>
         <div class="menuBtn">
           <feather type="settings" stroke="rgba(152,152,152,0.5)" size="20" @click="$refs.settingsModal.openModal()"></feather>
         </div>
@@ -79,6 +82,11 @@ export default {
       status: 0 // 0 for disconnected, 1 for connecting, 2 for connected
     }
   },
+  watch: {
+    $socket(to, from) {
+      console.log(to)
+    }
+  },
   computed: {
     filteredChats() {
       return this.chats.filter((chat) => {
@@ -92,6 +100,15 @@ export default {
         return "rgba(255,100,0,0.8)"
       } else if (this.status == 2) {
         return "rgba(0,255,0,0.5)"
+      }
+    },
+    statusText () {
+      if (this.status == 0) {
+        return "Device not found"
+      } else if (this.status == 1) {
+        return "Device found. Retrieving data..."
+      } else if (this.status == 2) {
+        return "Device connected"
       }
     }
   },
@@ -141,6 +158,7 @@ export default {
       this.offset = 0
       this.loading = false
       this.$disconnect()
+      this.status = 0
       this.$store.commit('resetMessages')
 
       const baseURI = this.$store.getters.baseURI
@@ -299,7 +317,7 @@ export default {
     },
     onerror () {
       this.loading = false
-      this.status = 0
+      this.status = 1
       this.$store.commit('resetMessages')
       this.$router.push('/').catch(()=>{})
     },
@@ -314,6 +332,14 @@ export default {
 </script>
 
 <style lang="scss">
+.vue-popover {
+  background: rgba(25,25,25,0.8) !important;
+  font-size: 14px;
+  &::before {
+    border-bottom-color: rgba(25,25,25,0.8) !important;
+  }
+}
+
 .emoji {
   position: relative;
   top: 0.15em;

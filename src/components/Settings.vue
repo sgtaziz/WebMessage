@@ -1,19 +1,15 @@
 <template>
   <transition name="fade">
     <div class="modal" v-if="show">
+      <popover name="tunnel" event="click" transition="fade">{{ relayMessage }}</popover>
       <div class="modal__backdrop" @click="closeModal()" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin') }"/>
 
       <div class="modal__dialog">
         <h3>Settings</h3>
         <input type="password" placeholder="Password" class="textinput" v-model="password" />
-        <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress"/>
+        <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" :disabled="this.enableTunnel"/>
         <div class="tunnelToggle">
-          <feather type="circle" size="20" @click="toggleTunnel" @mouseover="showTunnelDesc = true" @mouseout="showTunnelDesc = false"
-             :fill="relayColor"
-          ></feather>
-          <div class="desc" v-show="showTunnelDesc">
-            {{ relayMessage }}
-          </div>
+          <feather type="circle" size="20" @click="toggleTunnel" :fill="relayColor" v-popover:tunnel.bottom></feather>
         </div>
         <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
         <label class="switch">
@@ -77,7 +73,6 @@ export default {
       acceleration: true,
       version: '',
       process: window.process,
-      showTunnelDesc: false,
       relay: null,
       relayStatus: -1,
       relayMessage: "Tunneling is currently disabled. Click the circle and ensure your device is attached to enable it.",
@@ -120,7 +115,7 @@ export default {
       this.relay = new usbmux.Relay(this.port, this.port)
         .on('error', (err) => {
           if (err.message.includes('No devices connected')) {
-            this.relayMessage = "Tunneling is currently deactivated. No device is attached. Ensure you have iTunes installed."
+            this.relayMessage = "Error: No device is attached. Ensure that your device is plugged in and that you have iTunes installed."
             this.relayStatus = 0
             this.$store.commit('setIPAddress', this.ipAddress)
             this.$emit('saved')
@@ -129,7 +124,7 @@ export default {
         })
         .on('warning', (err) => {
           if (err.message.includes('No devices connected')) {
-            this.relayMessage = "Tunneling is currently deactivated. No device is attached. Ensure you have iTunes installed."
+            this.relayMessage = "Error: No device is attached. Ensure that your device is plugged in and that you have iTunes installed."
             this.relayStatus = 0
             this.$store.commit('setIPAddress', this.ipAddress)
             this.$emit('saved')
@@ -300,6 +295,12 @@ export default {
       &::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
+      }
+
+      &:disabled {
+        color: gray !important;
+        text-decoration: line-through;
+        cursor: not-allowed;
       }
     }
 
