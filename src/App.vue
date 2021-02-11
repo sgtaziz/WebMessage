@@ -256,8 +256,11 @@ export default {
           const notification = {
             title: messageData.name,
             body: messageData.text,
-            silent: this.$store.state.playsound,
-            icon: __static + '/icon.png'
+            silent: this.$store.state.playsound
+          }
+
+          if (process.platform === 'win32') {
+            notification.icon = __static + '/icon.png'
           }
 
           if (this.$store.state.playsound) this.notifSound.play()

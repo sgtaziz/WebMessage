@@ -20,7 +20,8 @@ export default new Vuex.Store({
     minimize: persistentStore.get('minimize', true),
     macstyle: persistentStore.get('macstyle', true),
     acceleration: persistentStore.get('acceleration', true),
-    messagesCache: []
+    messagesCache: [],
+    enableTunnel: persistentStore.get('enableTunnel', false)
   },
   mutations: {
     setPassword(state, password) {
@@ -64,6 +65,10 @@ export default new Vuex.Store({
     setAcceleration(state, acceleration) {
       state['acceleration'] = acceleration
       persistentStore.set('acceleration', acceleration)
+    },
+    setTunnel(state, enableTunnel) {
+      state['enableTunnel'] = enableTunnel
+      persistentStore.set('enableTunnel', enableTunnel)
     },
     addMessages(state, messages) {
       if (!state['messagesCache'][messages.id]) state['messagesCache'][messages.id] = []

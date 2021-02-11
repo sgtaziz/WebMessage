@@ -80,8 +80,9 @@ export default {
       showTunnelDesc: false,
       relay: null,
       relayStatus: -1,
-      relayMessage: "Tunneling is currently deactivated. No device is attached.",
-      relayColor: 'rgba(152,152,152,0.5)'
+      relayMessage: "Tunneling is currently disabled. Click the circle and ensure your device is attached to enable it.",
+      relayColor: 'rgba(152,152,152,0.5)',
+      enableTunnel: false
     }
   },
   beforeDestroy () {
@@ -92,6 +93,21 @@ export default {
   },
   methods: {
     toggleTunnel () {
+      this.enableTunnel = !this.enableTunnel
+      this.$store.commit('setTunnel', this.enableTunnel)
+      if (this.enableTunnel) {
+        this.initTunnel()
+      } else {
+        if (this.relay) {
+          console.log('Destroying old tunnel...')
+          this.relay.stop()
+          this.$store.commit('setIPAddress', this.ipAddress)
+          this.$emit('saved')
+        }
+
+        this.relayMessage = "Tunneling is currently disabled. Click the circle and ensure your device is attached to enable it."
+        this.relayColor = 'rgba(152,152,152,0.5)'
+      }
     },
     initTunnel () {
       if (this.relay) {
@@ -113,7 +129,7 @@ export default {
         })
         .on('warning', (err) => {
           if (err.message.includes('No devices connected')) {
-            this.relayMessage = "Tunneling is currently deactivated. No device is attached."
+            this.relayMessage = "Tunneling is currently deactivated. No device is attached. Ensure you have iTunes installed."
             this.relayStatus = 0
             this.$store.commit('setIPAddress', this.ipAddress)
             this.$emit('saved')
@@ -143,7 +159,12 @@ export default {
       this.$store.commit('setMacStyle', this.macstyle)
       this.$store.commit('setAcceleration', this.acceleration)
       this.show = false
-      this.initTunnel()
+      if (this.enableTunnel) {
+        this.initTunnel()
+      } else {
+        this.$emit('saved')
+      }
+      
 
       if (reloadApp) ipcRenderer.send('reload_app')
     },
@@ -163,7 +184,10 @@ export default {
       this.minimize = this.$store.state.minimize
       this.macstyle = this.$store.state.macstyle
       this.acceleration = this.$store.state.acceleration
-      this.initTunnel()
+      this.enableTunnel = this.$store.state.enableTunnel
+      if (this.enableTunnel) {
+        this.initTunnel()
+      }
     },
     enforceConstraints() {
       var el = this.$refs.portField
@@ -203,6 +227,7 @@ export default {
   width: 20px;
   position: relative;
   left: 266px;
+  cursor: pointer;
 
   .desc {
     position: absolute;
@@ -211,7 +236,7 @@ export default {
     width: 180px;
     height: 55px;
     text-align: left;
-    background-color: rgba(0,0,0,0.6);
+    background-color: rgba(25,25,25,0.9);
     padding: 10px;
     border-radius: 5px;
     font-size: 13px;
@@ -222,19 +247,6 @@ export default {
       opacity: 0;
       pointer-events: none; /* disable user interaction */
       user-select: none; /* disable user selection */
-    }
-
-    &:after {
-      content: "";
-      width: 0;
-      height: 0;
-      border-top: 10px solid transparent;
-      border-bottom: 10px solid transparent;
-      border-left: 10px solid rgba(0,0,0,0.6);
-      position: relative;
-      display: inline-flex;
-      bottom: 30px;
-      left: 95px;
     }
   }
 }
