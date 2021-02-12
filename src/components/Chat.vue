@@ -2,7 +2,7 @@
   <div class="chatContainer" :class="this.$route.path == '/message/'+this.chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate">
     <div class="unread" :style="read ? 'background-color: transparent;' : ''"></div>
     <div class="avatarContainer">
-      <img v-if='(docid && docid != 0)' class="avatar" :src="`${$store.getters.httpURI}/contactimg?docid=${docid}&auth=${encodeURIComponent($store.state.password)}`" />
+      <img v-if='(docid && docid != 0)' class="avatar" :src="`${$store.getters.httpURI}/contactimg?docid=${encodeURIComponent(docid)}&auth=${encodeURIComponent($store.state.password)}`" />
       <img v-else class="avatar" src="../assets/profile.jpg" />
     </div>
     <div class="chatContent">

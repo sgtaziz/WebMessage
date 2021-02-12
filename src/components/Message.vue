@@ -812,7 +812,7 @@ export default {
 
   .timegroup {
     text-align: center;
-    // padding-top: 10px;
+    padding-top: 10px;
     padding-bottom: 10px;
     color: #999999;
     font-size: 11px;
@@ -899,7 +899,7 @@ export default {
     }
 
     &.last {
-      margin-bottom: 10px;
+      // margin-bottom: 10px;
 
       &:before {
         content: "";

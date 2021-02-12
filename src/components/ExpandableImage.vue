@@ -28,7 +28,7 @@ export default {
   },
   computed: {
     url() {
-      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${this.type}&auth=${this.$store.state.password}`
+      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(this.type)}&auth=${encodeURIComponent(this.$store.state.password)}`
     }
   },
   methods: {
