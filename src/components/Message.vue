@@ -335,14 +335,15 @@ export default {
     },
     autoCompleteHooks () {
       if (this.$route.params.id == 'new') {
-        var input = document.getElementsByClassName('autocomplete-input')[0]
-        if (input) {
-          input.focus()
-          input.addEventListener('input', (e) => {
-            this.receiver = ''
-          })
-        }
-        return
+        this.$nextTick(() => {
+          var input = document.getElementsByClassName('autocomplete-input')[0]
+          if (input) {
+            input.focus()
+            input.addEventListener('input', (e) => {
+              this.receiver = ''
+            })
+          }
+        })
       }
     },
     autoCompleteInput (input) {

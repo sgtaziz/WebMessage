@@ -286,6 +286,10 @@ export default {
           this.chats.splice(chatIndex, 1)
         }
 
+        if (this.$route.path == '/message/'+chatData.address) {
+          chatData.read = true
+        }
+
         this.chats.unshift(chatData)
       }
 

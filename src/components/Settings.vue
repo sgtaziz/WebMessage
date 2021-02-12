@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div class="modal" v-if="show">
-      <popover name="tunnel" event="click" transition="fade">{{ relayMessage }}</popover>
+      <popover name="tunnel" event="hover" transition="fade">{{ relayMessage }}</popover>
       <div class="modal__backdrop" @click="closeModal()" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin') }"/>
 
       <div class="modal__dialog">

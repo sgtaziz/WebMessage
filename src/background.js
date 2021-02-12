@@ -1,12 +1,13 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, Tray, Menu, globalShortcut } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path')
 const contextMenu = require('electron-context-menu')
 const { autoUpdater } = require('electron-updater')
 const Store = require('electron-store')
+const localShortcut = require('electron-localshortcut')
 const AutoLaunch = require('auto-launch')
 
 const persistentStore = new Store()
@@ -298,7 +299,7 @@ function registerLocalAudioProtocol () {
 
 function registerShortcuts () {
   [1,2,3,4,5,6,7,8,9,'n'].forEach((key) => {
-    globalShortcut.register('CommandOrControl+'+key, () => {
+    localShortcut.register('CommandOrControl+'+key, () => {
       win.webContents.send('navigateTo', key)
     })
   })
