@@ -115,8 +115,21 @@ export default {
       if (chatIndex > -1) {
         let chat = this.chats[chatIndex]
         if (!chat.read) {
-          chat.read = true
-          this.sendSocket({ action: 'markAsRead', data: { chatId: this.$route.params.id } })
+          if (document.hasFocus()) {
+            chat.read = true
+            this.sendSocket({ action: 'markAsRead', data: { chatId: this.$route.params.id } })
+          } else {
+            let onFocusHandler = () => {
+              if (!chat.read && this.$route.path == '/message/'+val) {
+                chat.read = true
+                this.sendSocket({ action: 'markAsRead', data: { chatId: this.$route.params.id } })
+              }
+
+              window.removeEventListener('focus', onFocusHandler)
+            }
+            
+            window.addEventListener('focus', onFocusHandler)
+          }
         }
       }
     },
