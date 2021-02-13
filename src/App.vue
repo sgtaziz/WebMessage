@@ -1,5 +1,6 @@
 <template>
   <div id="app" :class="{ nostyle: !($store.state.macstyle || process.platform === 'darwin'), maximized: (maximized || !$store.state.acceleration) && process.platform !== 'darwin' }">
+    <vue-confirm-dialog class="confirmDialog"></vue-confirm-dialog>
     <settings ref="settingsModal" @saved="connectWS"></settings>
     <div id="nav" :class="{ notrans: !$store.state.acceleration }">
       <div class="titlebar">
@@ -41,13 +42,13 @@
           :date="chat.date"
           :read="chat.read"
           :docid="chat.docid"
-          @navigated="setAsRead(chat)">
+          @deleted="deleteChat(chat)">
         </chat>
       </simplebar>
     </div>
     <div id="content">
       <transition name="fade" mode="out-in">
-        <router-view></router-view>
+        <router-view @markAsRead="markAsRead"></router-view>
       </transition>
     </div>
   </div>
@@ -82,11 +83,6 @@ export default {
       status: 0 // 0 for disconnected, 1 for connecting, 2 for connected
     }
   },
-  watch: {
-    $socket(to, from) {
-      console.log(to)
-    }
-  },
   computed: {
     filteredChats() {
       return this.chats.filter((chat) => {
@@ -113,6 +109,17 @@ export default {
     }
   },
   methods: {
+    markAsRead (val) {
+      let chatIndex = this.chats.findIndex(obj => obj.address == val)
+
+      if (chatIndex > -1) {
+        let chat = this.chats[chatIndex]
+        if (!chat.read) {
+          chat.read = true
+          this.sendSocket({ action: 'markAsRead', data: { chatId: this.$route.params.id } })
+        }
+      }
+    },
     closeWindow () {
       if (this.$store.state.minimize) {
         ipcRenderer.send('minimizeToTray')
@@ -159,6 +166,7 @@ export default {
       this.loading = false
       this.$disconnect()
       this.status = 0
+      this.chats = []
       this.$store.commit('resetMessages')
 
       const baseURI = this.$store.getters.baseURI
@@ -168,11 +176,20 @@ export default {
       })
       this.$router.push('/').catch(()=>{})
     },
-    setAsRead (chat) {
-      chat.read = true
+    deleteChat (chat) {
+      var chatIndex = this.chats.findIndex(obj => obj.id == chat.id)
+      if (chatIndex > -1) {
+        this.chats.splice(chatIndex, 1)
+      }
+
+      if (this.$route.path == '/message/'+chat.address) {
+        this.$router.push('/')
+      }
+
+      this.$store.state.messagesCache[chat.address] = null
     },
     composeMessage () {
-      this.$router.push('/message/new')
+      if (this.status == 2) this.$router.push('/message/new')
     },
     onMove (e) {
       e.preventDefault()
@@ -184,6 +201,8 @@ export default {
       }
     },
     cacheMessages () {
+      if (!this.$store.state.cacheMessages) return
+
       if (this.$socket && this.$socket.readyState == 1) {
         for (let i = 0; i < this.chats.length; i++) {
           let chat = this.chats[i]
@@ -286,10 +305,6 @@ export default {
           this.chats.splice(chatIndex, 1)
         }
 
-        if (this.$route.path == '/message/'+chatData.address) {
-          chatData.read = true
-        }
-
         this.chats.unshift(chatData)
       }
 
@@ -326,7 +341,17 @@ export default {
         }
       }
     },
+    setAsRead (data) {
+      if (this.$store.state.messagesCache[data.chatId]) {
+        let messageIndex = this.$store.state.messagesCache[data.chatId].findIndex(obj => obj.guid == data.guid)
+        if (messageIndex > -1) {
+          this.$store.state.messagesCache[data.chatId][messageIndex]['dateRead'] = data.read
+          this.$store.state.messagesCache[data.chatId][messageIndex]['dateDelivered'] = data.delivered
+        }
+      }
+    },
     onopen () {
+      this.offset = 0
       this.requestChats()
       this.status = 1
     },
@@ -347,6 +372,37 @@ export default {
 </script>
 
 <style lang="scss">
+.confirmDialog {
+  .vc-container {
+    background-color: rgba(45,45,45, 0.9);
+    border: 1px solid rgba(25,25,25,0.9);
+    .vc-text {
+      color: white;
+      font-weight: 300;
+      font-size: 14px;
+    }
+    .vc-title {
+      color: white;
+      font-weight: 500;
+    }
+  }
+
+  .vc-btn {
+    background-color: rgba(45,45,45, 0.9);
+    border-color: rgba(25,25,25,0.9) !important;
+    color: rgba(255,0,0,0.9);
+
+    &:hover {
+      background-color: rgba(45,45,45, 0.9);
+      filter: brightness(90%);
+    }
+
+    &.left {
+      color: #4083ff;
+    }
+  }
+}
+
 .vue-popover {
   background: rgba(25,25,25,0.8) !important;
   font-size: 14px;
@@ -413,6 +469,8 @@ html {
   max-height: 100%;
   width: 100%;
   background-color: rgba(29,29,29,0);
+  font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+  font-weight: 300;
 }
 
 body {

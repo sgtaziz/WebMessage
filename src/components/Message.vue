@@ -39,8 +39,12 @@
                   class="message"
                   :key="i"
                   :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
+                  :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
                   v-if="$options.filters.twemoji(text.text) != ''">
                   <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                </div>
+                <div class="receipt" :key="i+'receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
+                  <span class="type">{{ text.read > 0 ? "Read" : "Delivered" }}</span> {{ humanReadableTimestamp(text.read > 0 ? text.read : text.delivered) }}
                 </div>
               </template>
             </div>
@@ -130,18 +134,21 @@ export default {
     },
     sortedMessages() {
       let messages = this.messages
+      let lastSentMessageFound = false
 
       const groupDates = (date1, date2) => (date2 - date1 < 6000)
       const groupAuthor = (author1, author2) => (author1 == author2)
 
-      const groupedMessages = messages.reduce((r, { text, ...rest }, i, arr) => {
+      const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, ...rest }, i, arr) => {
         const prev = arr[i +-1]
 
         if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date))
-            r[r.length - 1].texts.unshift({ text: text.trim(), date: rest.date, attachments: rest.attachments })
+            r[r.length - 1].texts.unshift({ text: text.trim(), date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, showStamp: rest.sender == 1 && !lastSentMessageFound })
         else
-          r.push({ ...rest, texts: [{ text: text.trim(), date: rest.date, attachments: rest.attachments }] })
+          r.push({ ...rest, texts: [{ text: text.trim(), date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, showStamp: rest.sender == 1 && !lastSentMessageFound }] })
 
+        if (rest.sender == 1 && !lastSentMessageFound) lastSentMessageFound = true
+        
         return r
       }, [])
 
@@ -230,6 +237,28 @@ export default {
 
       if (new Date().setHours(0,0,0,0) == tsDate) {
         return 'Today'
+      } else if (tsDate >= new Date().setHours(0,0,0,0) - 86400000) {
+        return 'Yesterday'
+      } else {
+        let today = new Date()
+        let lastWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).setHours(0,0,0,0)
+        if (ts >= lastWeek) {
+          return moment(ts).format('dddd')
+        }
+      }
+
+      let localDate = moment(ts).format("l")
+      let dateParts = localDate.split("/")
+      dateParts[2] = dateParts[2].substring(2)
+      let formattedDate = dateParts.join("/")
+      return formattedDate
+    },
+    humanReadableTimestamp (date) {
+      let ts = date*1000
+      let tsDate = new Date(ts).setHours(0,0,0,0)
+
+      if (new Date().setHours(0,0,0,0) == tsDate) {
+        return moment(ts).format('LT')
       } else if (tsDate >= new Date().setHours(0,0,0,0) - 86400000) {
         return 'Yesterday'
       } else {
@@ -372,7 +401,10 @@ export default {
                 return
               }
 
-              if (container.scrollHeight - (container.scrollTop + container.offsetHeight) <= 10) this.lastHeight = null
+              if (container.scrollHeight - (container.scrollTop + container.offsetHeight) <= 10) {
+                this.lastHeight = null
+                this.$emit('markAsRead', this.$route.params.id)
+              }
               else this.lastHeight = container.scrollHeight - container.scrollTop
 
               if (container.scrollTop == 0 && !this.loading) {
@@ -381,6 +413,8 @@ export default {
             })
           }
         }, 100)
+
+        this.$emit('markAsRead', this.$route.params.id)
       }
 
       this.$nextTick(this.scrollToBottom)
@@ -442,6 +476,18 @@ export default {
 
       this.postLoad()
     },
+    setAsRead (data) {
+      if (this.messages[0]['chatId'] == data.chatId) {
+        let messageIndex = this.messages.findIndex(obj => obj.guid == data.guid)
+        if (messageIndex > -1) {
+          this.messages[messageIndex]['dateRead'] = data.read
+          this.messages[messageIndex]['dateDelivered'] = data.delivered
+          if (this.lastHeight == null) {
+            this.$nextTick(() => { this.scrollToBottom() })
+          }
+        }
+      }
+    },
     newMessage (data) {
       var message = data.message
 
@@ -461,10 +507,15 @@ export default {
           if (this.messages.findIndex(obj => obj.id == message[0].id) != -1) return
 
           this.messages.unshift(message[0])
-          this.lastHeight = null
 
-          this.$nextTick(this.scrollToBottom)
-          setTimeout(this.scrollToBottom, 10) //Just in case
+          if (this.lastHeight == null) {
+            this.$nextTick(this.scrollToBottom)
+            setTimeout(this.scrollToBottom, 10) //Just in case
+          }
+
+          if (this.lastHeight == null) {
+            this.$emit('markAsRead')
+          }
         }
       }
     },
@@ -479,7 +530,6 @@ export default {
     onopen () {
       this.loading = false
       this.offset = 0
-      this.chats = []
       this.fetchMessages()
     }
   }
@@ -993,6 +1043,17 @@ export default {
       &:before, &:after {
         background: transparent !important;
       }
+    }
+  }
+
+  .receipt {
+    margin-top: 4px;
+    margin-right: -2px;
+    color: #999999;
+    font-size: 11px;
+
+    .type {
+      font-weight: 500;
     }
   }
 }
