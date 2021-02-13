@@ -1,6 +1,6 @@
 <template>
   <video class="videoplayer" controls width="100%" @canplay="handleLoad" @canplaythrough="handleLoad" @loadeddata="handleLoad">
-    <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(path)}&type=${type}&auth=${$store.state.password}`"
+    <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(path)}&type=${encodeURIComponent(type)}&auth=${encodeURIComponent($store.state.password)}`"
       :type="type.includes('quicktime') ? 'video/mp4' : type" />
     <!-- <source :src="`${$store.getters.httpURI}/attachments?path=${encodeURIComponent(path)}&type=${type}&auth=${$store.state.password}`"
       type="video/ogg" /> -->

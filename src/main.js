@@ -11,6 +11,7 @@ import Twemoji from './plugins/Twemoji'
 import linkify from 'vue-linkify'
 import $ from 'jquery'
 import Popover from 'vue-js-popover'
+import VueConfirmDialog from 'vue-confirm-dialog'
 window.$ = $
 
 const https = require('https')
@@ -26,6 +27,8 @@ Vue.use(VueNativeSock, 'ws://', {
 })
 Vue.use(VueFeather)
 Vue.use(Popover, { tooltip: true })
+Vue.use(VueConfirmDialog)
+Vue.component('vue-confirm-dialog', VueConfirmDialog.default)
 
 Vue.config.productionTip = false
 Vue.prototype.$http = axios.create({

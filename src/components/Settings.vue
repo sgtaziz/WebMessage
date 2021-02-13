@@ -24,6 +24,11 @@
           <div>Custom notification sound</div>
         </label>
         <label class="switch">
+          <input type="checkbox" v-model="cacheMessages">
+          <i></i>
+          <div>Precache messages <span style="color: rgba(255,0,0,0.8);font-size: 12px;">More battery drain</span></div>
+        </label>
+        <label class="switch">
           <input type="checkbox" v-model="startup">
           <i></i>
           <div>Launch on startup</div>
@@ -77,7 +82,8 @@ export default {
       relayStatus: -1,
       relayMessage: "Tunneling is currently disabled. Click the circle and ensure your device is attached to enable it.",
       relayColor: 'rgba(152,152,152,0.5)',
-      enableTunnel: false
+      enableTunnel: false,
+      cacheMessages: false
     }
   },
   beforeDestroy () {
@@ -153,6 +159,7 @@ export default {
       this.$store.commit('setMinimize', this.minimize)
       this.$store.commit('setMacStyle', this.macstyle)
       this.$store.commit('setAcceleration', this.acceleration)
+      this.$store.commit('setCacheMessages', this.cacheMessages)
       this.show = false
       if (this.enableTunnel) {
         this.initTunnel()
@@ -180,6 +187,7 @@ export default {
       this.macstyle = this.$store.state.macstyle
       this.acceleration = this.$store.state.acceleration
       this.enableTunnel = this.$store.state.enableTunnel
+      this.cacheMessages = this.$store.state.cacheMessages
       if (this.enableTunnel) {
         this.initTunnel()
       }

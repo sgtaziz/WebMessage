@@ -298,7 +298,7 @@ function registerLocalAudioProtocol () {
 }
 
 function registerShortcuts () {
-  [1,2,3,4,5,6,7,8,9,'n'].forEach((key) => {
+  [1,2,3,4,5,6,7,8,9,'N'].forEach((key) => {
     localShortcut.register('CommandOrControl+'+key, () => {
       win.webContents.send('navigateTo', key)
     })

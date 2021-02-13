@@ -10499,6 +10499,11 @@ vue-clickaway@^2.2.2:
   dependencies:
     loose-envify "^1.2.0"
 
+vue-confirm-dialog@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/vue-confirm-dialog/-/vue-confirm-dialog-1.0.2.tgz#a9c02b21e3aa6211ac50d6cedb2078e6eb721aaa"
+  integrity sha512-gTo1bMDWOLd/6ihmWv8VlPxhc9QaKoE5YqlsKydUOfrrQ3Q3taljF6yI+1TMtAtJLrvZ8DYrePhgBhY1VCJzbQ==
+
 vue-devtools@^5.1.4:
   version "5.1.4"
   resolved "https://registry.yarnpkg.com/vue-devtools/-/vue-devtools-5.1.4.tgz#265a7458ade2affb291739176964256b597fa302"

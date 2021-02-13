@@ -35,6 +35,7 @@
     "twemoji": "^13.0.1",
     "usbmux": "^0.1.0",
     "vue": "^2.6.11",
+    "vue-confirm-dialog": "^1.0.2",
     "vue-feather": "^1.1.1",
     "vue-js-popover": "^1.2.1",
     "vue-linkify": "^1.0.1",

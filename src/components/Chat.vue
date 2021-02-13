@@ -1,5 +1,6 @@
 <template>
-  <div class="chatContainer" :class="this.$route.path == '/message/'+this.chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate">
+  <div class="chatContainer" :class="this.$route.path == '/message/'+this.chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate"
+  @mouseover="showDelete = true" @mouseout="showDelete = false">
     <div class="unread" :style="read ? 'background-color: transparent;' : ''"></div>
     <div class="avatarContainer">
       <img v-if='(docid && docid != 0)' class="avatar" :src="`${$store.getters.httpURI}/contactimg?docid=${encodeURIComponent(docid)}&auth=${encodeURIComponent($store.state.password)}`" />
@@ -12,6 +13,9 @@
       </div>
       <div class="text">
         <span v-html="trimmedText"></span>
+      </div>
+      <div class="delete" v-show="showDelete" @click="deleteChat">
+        <feather type="x-circle" stroke="rgba(255,0,0,0.7)" :fill="this.$route.path == '/message/'+this.chatid ? '#2284FF' : 'rgba(45,45,45,0.8)'" size="15"></feather>
       </div>
     </div>
   </div>
@@ -29,6 +33,11 @@ export default {
     text: { type: String },
     date: { type: Number },
     read: { type: Boolean }
+  },
+  data () {
+    return {
+      showDelete: false
+    }
   },
   computed: {
     trimmedText() {
@@ -70,6 +79,22 @@ export default {
       if (this.$route.path != '/message/'+this.chatid) {
         this.$router.push('/message/'+this.chatid)
       }
+    },
+    deleteChat () {
+      this.$confirm({
+        title: 'Warning',
+        message: `Are you sure you want to delete your messages from ${this.author}? This cannot be undone.`,
+        button: {
+          no: 'No',
+          yes: 'Yes'
+        },
+        callback: confirm => {
+          if (confirm) {
+            this.sendSocket({ action: 'deleteChat', data: { chatId: `${this.chatid}` } })
+            this.$emit('deleted')
+          }
+        }
+      })
     }
   }
 }
@@ -87,6 +112,23 @@ export default {
     margin-top: 26px;
   }
 
+  .delete {
+    position: absolute;
+    top: 25px;
+    right: 4px;
+    padding: 0px 3px;
+    cursor: pointer;
+
+    display: inherit !important; /* override v-show display: none */
+    transition: opacity 0.2s;
+
+    &[style*="display: none;"] {
+      opacity: 0;
+      pointer-events: none; /* disable user interaction */
+      user-select: none; /* disable user selection */
+    }
+  }
+
   .chatContent {
     float: right;
     // padding: 0px;
@@ -95,6 +137,7 @@ export default {
     width: calc(100% - 65px);
     border-bottom: 1px solid rgba(87,87,87,0.7);
     font-size: 13px;
+    position: relative;
   }
 
   .text {
