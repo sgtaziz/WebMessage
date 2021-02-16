@@ -19,29 +19,30 @@
       </div>
       <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
         <simplebar class="messages" ref="messages" data-simplebar-auto-hide="false">
-          <div v-for="(msg, i) in sortedMessages" :id="msg.id" :key="msg.id">
+          <div v-for="(msg, i) in sortedMessages" :key="msg.id">
             <div class="timegroup" v-html="dateGroup(i-1, i)" v-if="dateGroup(i-1, i) != ''"></div>
 
             <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
               <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
 
               <template v-for="(text, i) in msg.texts">
-              
-                <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
-                  <template v-if="attachment[0] != '' && !attachment[0].includes('.pluginPayloadAttachment')">
-                    <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
-                    <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
-                    <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
-                  </template>
-                </div>
+                <div :key="'wrapper'+i" v-longclick="openReactionMenu" style="display: contents;">
+                  <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
+                    <template v-if="attachment[0] != '' && !attachment[0].includes('.pluginPayloadAttachment')">
+                      <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                      <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
+                      <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
+                    </template>
+                  </div>
 
-                <div
-                  class="message"
-                  :key="i"
-                  :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
-                  :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
-                  v-if="$options.filters.twemoji(text.text) != ''">
-                  <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                  <div
+                    class="message"
+                    :key="i"
+                    :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
+                    :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
+                    v-if="$options.filters.twemoji(text.text) != ''">
+                    <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                  </div>
                 </div>
                 <div class="receipt" :key="i+'receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
                   <span class="type">{{ text.read > 0 ? "Read" : "Delivered" }}</span> {{ humanReadableTimestamp(text.read > 0 ? text.read : text.delivered) }}
@@ -213,8 +214,8 @@ export default {
       return result.name + ` (${result.phone})`
     },
     onSubmit (result) {
-      if (result && result.chatId) {
-        this.$router.push('/message/'+result.chatId)
+      if (result && result.personId) {
+        this.$router.push('/message/'+result.personId)
       } else if (result) {
         this.autoCompleteInput(result)
       } else {
@@ -315,6 +316,16 @@ export default {
         }
       })
     },
+    openReactionMenu (e) {
+      console.log(e)
+    },
+    sendReaction (text) {
+      if (!this.messages[0]) return
+      this.sendSocket({ action: 'sendReaction', data: {
+        chatId: this.messages[0].chatId,
+        guid: text.guid
+      }})
+    },
     sendText () {
       let messageText = this.messageText[this.$route.params.id]
       if (!messageText) messageText = ''
@@ -326,7 +337,7 @@ export default {
       let textObj = {
         text: messageText,
         attachments: this.$refs.uploadButton.attachments,
-        address: this.messages[0] ? this.messages[0].address : this.receiver
+        address: this.messages[0] ? this.messages[0].chatId : this.receiver
       }
       
       document.getElementById("twemoji-textarea").innerHTML = ""
@@ -466,7 +477,7 @@ export default {
   socket: {
     fetchMessages (data) {
       if (this.$route.params.id == 'new') return
-      if (data && data[0] && data[0].chatId != this.$route.params.id) return
+      if (data && data[0] && (data[0].personId != this.$route.params.id)) return
 
       if (this.offset == 0 && !this.$store.state.messagesCache[this.$route.params.id]) {
         this.messages = data
@@ -477,7 +488,8 @@ export default {
       this.postLoad()
     },
     setAsRead (data) {
-      if (this.messages[0]['chatId'] == data.chatId) {
+      if (this.$route.params.id == 'new') return
+      if (this.messages[0]['chatId'] == data.chatId || this.$route.params.id == data.chatId) {
         let messageIndex = this.messages.findIndex(obj => obj.guid == data.guid)
         if (messageIndex > -1) {
           this.messages[messageIndex]['dateRead'] = data.read
@@ -493,8 +505,8 @@ export default {
 
       if (this.$route.params.id == 'new') {
         if (Object.keys(message).length > 0) {
-          if (message[0].address == this.receiver) {
-            this.$router.push('/message/'+message[0].chatId)
+          if (message[0].chatId == this.receiver) {
+            this.$router.push('/message/'+message[0].personId)
           }
         }
         return
@@ -503,7 +515,7 @@ export default {
       if (Object.keys(message).length == 0) {
         console.log("Received a message, but content was empty.")
       } else {
-        if (this.messages && this.messages.length > 0 && message[0]['chatId'] == this.messages[0]['chatId']) {
+        if (this.messages && this.messages.length > 0 && message[0]['personId'] == this.$route.params.id) {
           if (this.messages.findIndex(obj => obj.id == message[0].id) != -1) return
 
           this.messages.unshift(message[0])
@@ -862,7 +874,7 @@ export default {
 
   .timegroup {
     text-align: center;
-    padding-top: 10px;
+    // padding-top: 10px;
     padding-bottom: 10px;
     color: #999999;
     font-size: 11px;
@@ -949,7 +961,7 @@ export default {
     }
 
     &.last {
-      // margin-bottom: 10px;
+      margin-bottom: 10px;
 
       &:before {
         content: "";

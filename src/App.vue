@@ -36,7 +36,7 @@
       </div>
       <simplebar class="chats" ref="chats" data-simplebar-auto-hide="false">
         <chat v-for="chat in filteredChats" :key="chat.id"
-          :chatid="chat.address"
+          :chatid="chat.personId"
           :author="chat.author"
           :text="chat.text"
           :date="chat.date"
@@ -110,10 +110,10 @@ export default {
   },
   methods: {
     markAsRead (val) {
-      let chatIndex = this.chats.findIndex(obj => obj.address == val)
-
+      let chatIndex = this.chats.findIndex(obj => obj.personId == val)
       if (chatIndex > -1) {
         let chat = this.chats[chatIndex]
+
         if (!chat.read) {
           if (document.hasFocus()) {
             chat.read = true
@@ -181,25 +181,25 @@ export default {
       this.status = 0
       this.chats = []
       this.$store.commit('resetMessages')
+      this.$router.push('/').catch(()=>{})
 
       const baseURI = this.$store.getters.baseURI
       this.$connect(baseURI, {
         format: 'json',
         reconnection: true,
       })
-      this.$router.push('/').catch(()=>{})
     },
     deleteChat (chat) {
-      var chatIndex = this.chats.findIndex(obj => obj.id == chat.id)
+      var chatIndex = this.chats.findIndex(obj => obj.personId == chat.personId)
       if (chatIndex > -1) {
         this.chats.splice(chatIndex, 1)
       }
 
-      if (this.$route.path == '/message/'+chat.address) {
+      if (this.$route.path == '/message/'+chat.personId) {
         this.$router.push('/')
       }
 
-      this.$store.state.messagesCache[chat.address] = null
+      this.$store.state.messagesCache[chat.personId] = null
     },
     composeMessage () {
       if (this.status == 2) this.$router.push('/message/new')
@@ -220,7 +220,7 @@ export default {
         for (let i = 0; i < this.chats.length; i++) {
           let chat = this.chats[i]
           this.sendSocket({ action: 'fetchMessages', data: {
-              id: chat.address,
+              id: chat.personId,
               offset: `0`,
               limit: `25`
             }
@@ -263,7 +263,7 @@ export default {
       } else {
         let arrayId = parseInt(id) - 1
         if (this.chats[arrayId]) {
-          this.$router.push('/message/'+this.chats[arrayId].address).catch(()=>{})
+          this.$router.push('/message/'+this.chats[arrayId].personId).catch(()=>{})
         }
       }
     })
@@ -310,9 +310,10 @@ export default {
     },
     newMessage (data) {
       var chatData = data.chat[0]
+      console.log(data)
 
-      if (chatData && chatData.id) {
-        var chatIndex = this.chats.findIndex(obj => obj.id == chatData.id)
+      if (chatData && chatData.personId) {
+        var chatIndex = this.chats.findIndex(obj => obj.personId == chatData.personId)
 
         if (chatIndex > -1) {
           this.chats.splice(chatIndex, 1)
@@ -370,15 +371,20 @@ export default {
     },
     onerror () {
       this.loading = false
+      if (this.$socket && this.$socket.readyState == 1) return
       this.status = 1
       this.$store.commit('resetMessages')
       this.$router.push('/').catch(()=>{})
+      this.chats = []
     },
-    onclose () {
+    onclose (e) {
+      console.log(e)
       this.loading = false
+      if (this.$socket && this.$socket.readyState == 1) return
       this.status = 0
       this.$store.commit('resetMessages')
       this.$router.push('/').catch(()=>{})
+      this.chats = []
     }
   }
 }

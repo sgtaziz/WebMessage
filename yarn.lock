@@ -10552,6 +10552,13 @@ vue-loader@^15.9.2:
     vue-hot-reload-api "^2.3.0"
     vue-style-loader "^4.1.0"
 
+vue-long-click@^0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/vue-long-click/-/vue-long-click-0.0.4.tgz#8679652a3c7183258a9558c1394e7d35ad4be63d"
+  integrity sha512-1/8KMsON6k8ebGqOhBZKU69EWlTLv4+LUluwUxTMNYno9t7ztk8j6rNVwewbp9hULktEoe+jBnxMFBngsPQCaQ==
+  dependencies:
+    vue "^2.5.22"
+
 vue-native-websocket@^2.0.14:
   version "2.0.14"
   resolved "https://registry.yarnpkg.com/vue-native-websocket/-/vue-native-websocket-2.0.14.tgz#fddb56f9f93d2ecc861486ee3c8f29506ea2a168"
@@ -10583,7 +10590,7 @@ vue-template-es2015-compiler@^1.9.0:
   resolved "https://registry.yarnpkg.com/vue-template-es2015-compiler/-/vue-template-es2015-compiler-1.9.1.tgz#1ee3bc9a16ecbf5118be334bb15f9c46f82f5825"
   integrity sha512-4gDntzrifFnCEvyoO8PqyJDmguXgVPxKiIxrBKjIowvL9l+N66196+72XVYR8BBf1Uv1Fgt3bGevJ+sEmxfZzw==
 
-vue@^2.1.6, vue@^2.6.11:
+vue@^2.1.6, vue@^2.5.22, vue@^2.6.11:
   version "2.6.12"
   resolved "https://registry.yarnpkg.com/vue/-/vue-2.6.12.tgz#f5ebd4fa6bd2869403e29a896aed4904456c9123"
   integrity sha512-uhmLFETqPPNyuLLbsKz6ioJ4q7AZHzD8ZVFNATNyICSZouqP2Sz0rotWQC8UNBF6VGSCs5abnKJoStA6JbCbfg==

@@ -12,6 +12,7 @@ import linkify from 'vue-linkify'
 import $ from 'jquery'
 import Popover from 'vue-js-popover'
 import VueConfirmDialog from 'vue-confirm-dialog'
+import { longClickDirective } from 'vue-long-click'
 window.$ = $
 
 const https = require('https')
@@ -40,6 +41,8 @@ Vue.prototype.$http = axios.create({
 Vue.mixin(mixins)
 
 Vue.directive('linkified', linkify)
+Vue.directive('longclick', longClickDirective({ delay: 800, interval: 0 }))
+
 
 axios.defaults.headers.common['Authorization'] = store.state.password
 
