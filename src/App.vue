@@ -304,13 +304,12 @@ export default {
       this.status = 2
     },
     fetchMessages (data) {
-      if (data && data[0] && !this.$store.state.messagesCache[data[0].chatId]) {
-        this.$store.commit('addMessages', { id: data[0].chatId, data: data })
+      if (data && data[0] && !this.$store.state.messagesCache[data[0].personId]) {
+        this.$store.commit('addMessages', { id: data[0].personId, data: data })
       }
     },
     newMessage (data) {
       var chatData = data.chat[0]
-      console.log(data)
 
       if (chatData && chatData.personId) {
         var chatIndex = this.chats.findIndex(obj => obj.personId == chatData.personId)
@@ -325,9 +324,13 @@ export default {
       var messageData = data.message[0]
 
       if (messageData) {
-        if (this.$store.state.messagesCache[messageData.chatId]) {
-          if (this.$store.state.messagesCache[messageData.chatId].findIndex(obj => obj.id == messageData.id) != -1) return
-          this.$store.state.messagesCache[messageData.chatId].unshift(messageData)
+        if (this.$store.state.messagesCache[messageData.personId]) {
+          let oldMsgIndex = this.$store.state.messagesCache[messageData.personId].findIndex(obj => obj.guid == messageData.guid)
+          if (oldMsgIndex != -1) {
+            this.$store.state.messagesCache[messageData.personId][oldMsgIndex] = messageData
+            return
+          }
+          this.$store.state.messagesCache[messageData.personId].unshift(messageData)
         }
 
         if (messageData.sender != 1 && remote.Notification.isSupported()) {
@@ -346,7 +349,7 @@ export default {
           notif.on('click', (event, arg) => {
             if (chatData && chatData.id) {
               ipcRenderer.send('show_win')
-              this.$router.push('/message/'+messageData.chatId)
+              this.$router.push('/message/'+messageData.personId)
             }
           })
           notif.show()
@@ -355,12 +358,47 @@ export default {
         }
       }
     },
+    newReaction (data) {
+      let reactions = data.reactions
+      if (reactions && reactions.length > 0 && this.$store.state.messagesCache[reactions[0].personId]) {
+        let msgIndex = this.$store.state.messagesCache[reactions[0].personId].findIndex(obj => obj.guid == reactions[0].forGUID)
+        if (msgIndex > -1) {
+          this.$store.state.messagesCache[reactions[0].personId][msgIndex].reactions = reactions
+        }
+      }
+
+      let chatData = data.chat[0]
+
+      if (chatData && chatData.personId) {
+        let chatIndex = this.chats.findIndex(obj => obj.personId == chatData.personId)
+
+        if (chatIndex > -1) {
+          this.chats.splice(chatIndex, 1)
+        }
+        this.chats.unshift(chatData)
+      }
+    },
     setAsRead (data) {
       if (this.$store.state.messagesCache[data.chatId]) {
         let messageIndex = this.$store.state.messagesCache[data.chatId].findIndex(obj => obj.guid == data.guid)
         if (messageIndex > -1) {
           this.$store.state.messagesCache[data.chatId][messageIndex]['dateRead'] = data.read
           this.$store.state.messagesCache[data.chatId][messageIndex]['dateDelivered'] = data.delivered
+        }
+      }
+    },
+    removeChat (data) {
+      if (data.chatId) {
+        let chatId = data.chatId
+        var chatIndex = this.chats.findIndex(obj => obj.address == chatId)
+
+        if (chatIndex > -1) {
+          let chat = this.chats[chatIndex]
+          if (this.$route.path == '/message/'+chat.personId) {
+            this.$router.push('/')
+          }
+          this.$store.state.messagesCache[chat.personId] = null
+          this.chats.splice(chatIndex, 1)
         }
       }
     },
@@ -378,7 +416,6 @@ export default {
       this.chats = []
     },
     onclose (e) {
-      console.log(e)
       this.loading = false
       if (this.$socket && this.$socket.readyState == 1) return
       this.status = 0

@@ -13,6 +13,9 @@ import $ from 'jquery'
 import Popover from 'vue-js-popover'
 import VueConfirmDialog from 'vue-confirm-dialog'
 import { longClickDirective } from 'vue-long-click'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faHeart, faThumbsUp, faThumbsDown, faLaughSquint, faExclamation, faQuestion } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 window.$ = $
 
 const https = require('https')
@@ -29,6 +32,15 @@ Vue.use(VueNativeSock, 'ws://', {
 Vue.use(VueFeather)
 Vue.use(Popover, { tooltip: true })
 Vue.use(VueConfirmDialog)
+
+library.add(faHeart)
+library.add(faThumbsUp)
+library.add(faThumbsDown)
+library.add(faLaughSquint)
+library.add(faExclamation)
+library.add(faQuestion)
+
+Vue.component('font-awesome-icon', FontAwesomeIcon)
 Vue.component('vue-confirm-dialog', VueConfirmDialog.default)
 
 Vue.config.productionTip = false

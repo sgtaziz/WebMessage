@@ -18,16 +18,18 @@
         <img src="@/assets/loading.webp" style="height:18px;" />
       </div>
       <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
-        <simplebar class="messages" ref="messages" data-simplebar-auto-hide="false">
-          <div v-for="(msg, i) in sortedMessages" :key="msg.id">
+        <reactionMenu :target="reactingMessage" :reactions="reactingMessageReactions" :guid="reactingMessageGUID" @close="closeReactionMenu" @sendReaction="sendReaction"></reactionMenu>
+        <simplebar class="messages" ref="messages">
+          <div v-for="(msg, i) in sortedMessages" :key="'msg'+msg.id">
             <div class="timegroup" v-html="dateGroup(i-1, i)" v-if="dateGroup(i-1, i) != ''"></div>
 
-            <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type" class="messageGroup">
+            <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type + (sortedMessages.length-1 == i ? ' last' : '')" class="messageGroup">
               <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
 
-              <template v-for="(text, i) in msg.texts">
-                <div :key="'wrapper'+i" v-longclick="openReactionMenu" style="display: contents;">
-                  <div v-for="(attachment, index) in text.attachments" :key="`${i}-${index}`" class="attachment">
+              <template v-for="(text, ii) in msg.texts">
+                <div :key="'wrapper'+ii" :ref="'msg'+msg.id+'-text'+ii" :id="'msg'+msg.id+'-text'+ii" @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions)" @mouseup.left="stopInterval" @mouseleave="stopInterval" class="textWrapper">
+                  <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions)" :target="'#msg'+msg.id+'-text'+ii" :reactions="text.reactions" v-if="text.attachments && text.attachments.length > 0 && $options.filters.twemoji(text.text) == ''" :targetFromMe="msg.sender == 1"></reactions>
+                  <div v-for="(attachment, index) in text.attachments" :key="`${ii}-${index}`" class="attachment">
                     <template v-if="attachment[0] != '' && !attachment[0].includes('.pluginPayloadAttachment')">
                       <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
                       <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
@@ -35,16 +37,17 @@
                     </template>
                   </div>
 
+                  <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions)" :target="'#msg'+msg.id+'-text'+ii" :reactions="text.reactions" v-if="$options.filters.twemoji(text.text) != ''" :targetFromMe="msg.sender == 1"></reactions>
                   <div
                     class="message"
-                    :key="i"
-                    :class="(msg.texts.length-1 == i ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
+                    :key="'msg'+msg.id+'-text'+ii"
+                    :class="(msg.texts.length-1 == ii ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
                     :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
                     v-if="$options.filters.twemoji(text.text) != ''">
                     <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
                   </div>
                 </div>
-                <div class="receipt" :key="i+'receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
+                <div class="receipt" :key="'msg'+msg.id+'-text'+ii+'-receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
                   <span class="type">{{ text.read > 0 ? "Read" : "Delivered" }}</span> {{ humanReadableTimestamp(text.read > 0 ? text.read : text.delivered) }}
                 </div>
               </template>
@@ -93,6 +96,8 @@ import VideoPlayer from './VideoPlayer'
 import ExpandableImage from './ExpandableImage'
 import DownloadAttachment from './DownloadAttachment'
 import UploadButton from './UploadButton'
+import ReactionMenu from './ReactionMenu'
+import Reactions from './Reactions'
 import axios from 'axios'
 
 export default {
@@ -104,7 +109,9 @@ export default {
     VideoPlayer,
     ExpandableImage,
     DownloadAttachment,
-    UploadButton
+    UploadButton,
+    ReactionMenu,
+    Reactions
   },
   data: function () {
     return {
@@ -117,7 +124,12 @@ export default {
       ignoreNextScroll: false,
       loading: false,
       canSend: true,
-      hasAttachments: false
+      hasAttachments: false,
+      interval: null,
+      timeHolding: 0,
+      reactingMessage: null,
+      reactingMessageGUID: null,
+      reactingMessageReactions: null
     }
   },
   computed: {
@@ -140,13 +152,13 @@ export default {
       const groupDates = (date1, date2) => (date2 - date1 < 6000)
       const groupAuthor = (author1, author2) => (author1 == author2)
 
-      const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, ...rest }, i, arr) => {
+      const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, reactions, ...rest }, i, arr) => {
         const prev = arr[i +-1]
 
         if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date))
-            r[r.length - 1].texts.unshift({ text: text.trim(), date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, showStamp: rest.sender == 1 && !lastSentMessageFound })
+            r[r.length - 1].texts.unshift({ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound })
         else
-          r.push({ ...rest, texts: [{ text: text.trim(), date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, showStamp: rest.sender == 1 && !lastSentMessageFound }] })
+          r.push({ ...rest, texts: [{ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound }] })
 
         if (rest.sender == 1 && !lastSentMessageFound) lastSentMessageFound = true
         
@@ -165,6 +177,9 @@ export default {
       this.ignoreNextScroll = false
       this.canSend = true
       this.hasAttachments = false
+      this.reactingMessage = null
+      this.reactingMessageGUID = null
+      this.reactingMessageReactions = null
       if (this.$refs.uploadButton) {
         this.$refs.uploadButton.clear()
       }
@@ -182,6 +197,28 @@ export default {
     },
     isVideo(type) {
       return type.includes('video/')
+    },
+    startInterval (msgId, textId, guid, reactions) {
+      if (!this.interval) {
+        this.interval = setInterval(() => {
+          this.timeHolding++
+          if (this.timeHolding > 7) { //> 0.7 seconds, will trigger at 0.8 seconds
+            this.openReactionMenu(msgId, textId, guid, reactions)
+            clearInterval(this.interval)
+            this.interval = false
+            this.timeHolding = 0
+          }
+        }, 100)
+      }
+    },
+    stopInterval () {
+      clearInterval(this.interval)
+      this.interval = false
+      this.timeHolding = 0
+    },
+    closeReactionMenu () {
+      this.reactingMessage = null
+      this.reactingMessageGUID = null
     },
     dateGroup(prev, current) {
       let prevstamp = this.sortedMessages[prev] ? this.sortedMessages[prev].date : 0
@@ -316,20 +353,23 @@ export default {
         }
       })
     },
-    openReactionMenu (e) {
-      console.log(e)
+    openReactionMenu (msgId, textId, guid, reactions) {
+      let el = $(this.$refs['msg'+msgId+'-text'+textId])
+      this.reactingMessageReactions = reactions
+      this.reactingMessageGUID = guid
+      this.reactingMessage = el
     },
-    sendReaction (text) {
+    sendReaction (reactionId, guid) {
       if (!this.messages[0]) return
       this.sendSocket({ action: 'sendReaction', data: {
         chatId: this.messages[0].chatId,
-        guid: text.guid
+        guid: guid,
+        reactionId: reactionId
       }})
     },
     sendText () {
       let messageText = this.messageText[this.$route.params.id]
       if (!messageText) messageText = ''
-      messageText = messageText.trim()
       if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
       if (!this.canSend) return
       this.canSend = false
@@ -389,8 +429,10 @@ export default {
     autoCompleteInput (input) {
       if (input && input.name) {
         this.receiver = input.phone
+        this.hookPasteAndDrop()
       } else if (/^\+\d{11,16}/gi.test(input)) {
         this.receiver = input
+        this.hookPasteAndDrop()
       }
     },
     previewFiles () {
@@ -434,9 +476,13 @@ export default {
       this.offset += this.limit
       this.loading = false
 
+      this.hookPasteAndDrop()
+    },
+    hookPasteAndDrop () {
       this.$nextTick(() => {
         var el = document.getElementById('twemoji-textarea')
         if (el) {
+          setTimeout(() => { el.focus() }, 10)
           el.addEventListener('paste', e => {
             if (e.clipboardData.files && e.clipboardData.files.length > 0) {
               let text = e.clipboardData.getData('Text')
@@ -481,7 +527,6 @@ export default {
 
       if (this.offset == 0 && !this.$store.state.messagesCache[this.$route.params.id]) {
         this.messages = data
-        this.$store.commit('addMessages', { id: this.$route.params.id, data: data })
       }
       else this.messages.push(...data)
 
@@ -497,6 +542,7 @@ export default {
           if (this.lastHeight == null) {
             this.$nextTick(() => { this.scrollToBottom() })
           }
+          this.messages.__ob__.dep.notify()
         }
       }
     },
@@ -516,7 +562,11 @@ export default {
         console.log("Received a message, but content was empty.")
       } else {
         if (this.messages && this.messages.length > 0 && message[0]['personId'] == this.$route.params.id) {
-          if (this.messages.findIndex(obj => obj.id == message[0].id) != -1) return
+          let oldMsgIndex = this.messages.findIndex(obj => obj.id == message[0].id)
+          if (oldMsgIndex != -1) {
+            this.messages[oldMsgIndex] = message[0]
+            return
+          }
 
           this.messages.unshift(message[0])
 
@@ -528,6 +578,22 @@ export default {
           if (this.lastHeight == null) {
             this.$emit('markAsRead')
           }
+        }
+      }
+    },
+    newReaction (data) {
+      let reactions = data.reactions
+      if (reactions && reactions.length > 0) {
+        let msgIndex = this.messages.findIndex(obj => obj.guid == reactions[0].forGUID)
+        if (msgIndex > -1) {
+          this.messages[msgIndex].reactions = reactions
+          this.messages.__ob__.dep.notify()
+          let intervalTime = 0
+          let interval = setInterval(() => {
+            if (this.lastHeight == null) this.scrollToBottom()
+            if (intervalTime >= 300) clearInterval(interval)
+            intervalTime += 1
+          }, 1)
         }
       }
     },
@@ -900,27 +966,32 @@ export default {
 }
 
 .messageGroup {
-  // margin-top: 30px;
+  margin-bottom: 10px;
   padding-left: 20px;
   padding-right: 20px;
   display: flex;
   flex-direction: column;
 
+  &.last {
+    margin-bottom: 0px;
+  }
+
   .attachment {
-    max-width: 75%;
+    max-width: 60%;
+    max-height: 60%;
     border-radius: 18px;
     height: fit-content;
     margin-bottom: -2px;
 
     img {
-      max-width: 280px;
-      max-height: 700px;
+      // max-width: 280px;
+      // max-height: 700px;
       border-radius: 12px;
     }
 
     video {
-      max-width: 420px;
-      max-height: 700px;
+      // max-width: 420px;
+      // max-height: 700px;
       border-radius: 12px;
     }
   }
@@ -948,6 +1019,13 @@ export default {
 .receive {
   align-items: flex-start;
 
+  .textWrapper {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    width: 100%;
+  }
+
   .message {
     color: white;
     margin-right: 25%;
@@ -961,8 +1039,6 @@ export default {
     }
 
     &.last {
-      margin-bottom: 10px;
-
       &:before {
         content: "";
         position: absolute;
@@ -1005,6 +1081,13 @@ export default {
 .send {
   align-items: flex-end;
 
+  .textWrapper {
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    width: 100%;
+  }
+
   .message {
     color: white;
     margin-left: 25%;
@@ -1018,8 +1101,6 @@ export default {
     }
 
     &.last {
-      margin-bottom: 10px;
-
       &:before {
         content: "";
         position: absolute;
