@@ -978,7 +978,7 @@ export default {
 
   .attachment {
     max-width: 60%;
-    max-height: 60%;
+    max-height: 60vh;
     border-radius: 18px;
     height: fit-content;
     margin-bottom: -2px;
@@ -987,12 +987,16 @@ export default {
       // max-width: 280px;
       // max-height: 700px;
       border-radius: 12px;
+      max-height: 60vh;
+      max-width: 60vh;
     }
 
     video {
       // max-width: 420px;
       // max-height: 700px;
       border-radius: 12px;
+      max-height: 60vh;
+      max-width: 60vh;
     }
   }
 }

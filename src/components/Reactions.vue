@@ -1,7 +1,7 @@
 <template>
   <transition name="slide-fade" mode="out-in">
     <div class="reactions" v-if="reactionList.length > 0" :class="{ left: !targetFromMe }">
-      <div v-for="(reaction, i) in reactionList" @click="click" :key="reaction.guid" class="bubble" :class="{ isMe: reaction.sender == 1 }" :style="{ zIndex: 4-i, top: position.top+'px', left: (position.left+(targetFromMe ? (-i*3) : (i*3)))+'px' }">
+      <div v-for="(reaction, i) in reactionList" @click="click" :key="reaction.guid" class="bubble" :class="{ isMe: reaction.sender == 1 }" :style="{ zIndex: 4-i, top: position.top+'px', left: (position.left+(targetFromMe ? (-i*3) : (i*3)))+'px', right: position.right + 'px' }">
         <font-awesome-icon v-if="reaction.icon" :icon="reaction.icon.name" size="lg" :style="reaction.icon.style" />
       </div>
     </div>
@@ -45,7 +45,10 @@ export default {
     }
   },
   mounted() {
-    this.adjustPostion()
+    this.$nextTick(this.adjustPostion())
+    window.addEventListener('resize', (e) => {
+      this.adjustPostion()
+    })
   },
   beforeMount () {
     this.adjustPostion()
@@ -53,10 +56,11 @@ export default {
   methods: {
     adjustPostion () {
       let target = $(this.target).children().last()
+      let padding = (target.css('padding-left') ? target.css('padding-left') : '0px').replace('px', '')
 
-      this.position.left = (target.width() + 10)
+      this.position.left = (target.width() - 12 + (padding * 2))
       if (this.targetFromMe) {
-        this.position.left = (-target.width() - 36)
+        this.position.left = (-target.width() - 16 - (padding * 2))
       }
     }
   },
@@ -77,7 +81,7 @@ export default {
     width: 14px;
     height: 14px;
     line-height: 12px;
-    transition: 0.3s;
+    // transition: 0.3s;
 
     svg {
       width: 100%;
