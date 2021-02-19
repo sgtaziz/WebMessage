@@ -562,9 +562,10 @@ export default {
         console.log("Received a message, but content was empty.")
       } else {
         if (this.messages && this.messages.length > 0 && message[0]['personId'] == this.$route.params.id) {
-          let oldMsgIndex = this.messages.findIndex(obj => obj.id == message[0].id)
+          let oldMsgIndex = this.messages.findIndex(obj => obj.guid == message[0].guid)
           if (oldMsgIndex != -1) {
             this.messages[oldMsgIndex] = message[0]
+            this.messages.__ob__.notify()
             return
           }
 
