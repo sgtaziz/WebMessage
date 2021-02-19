@@ -30,6 +30,9 @@ export default {
     }
   },
   watch: {
+    reactions(newVal) {
+      this.$nextTick(this.adjustPostion())
+    }
   },
   data() {
     return {
@@ -46,9 +49,8 @@ export default {
   },
   mounted() {
     this.$nextTick(this.adjustPostion())
-    window.addEventListener('resize', (e) => {
-      this.adjustPostion()
-    })
+    setTimeout(this.adjustPostion(), 10) //i hate racey bois
+    window.addEventListener('resize', this.adjustPostion())
   },
   beforeMount () {
     this.adjustPostion()
