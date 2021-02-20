@@ -9,7 +9,7 @@ If you would like to support my work, you can donate using [this link](https://p
 
 ![Screenshot 2](https://i.imgur.com/ioMiXOn.png)
 
-## Project setup
+## Development
 ### Installs required dependencies 
 ```
 yarn install
