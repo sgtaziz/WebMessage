@@ -607,11 +607,15 @@ export default {
           this.messages[msgIndex].reactions = reactions
           this.messages.__ob__.dep.notify()
           let intervalTime = 0
-          let interval = setInterval(() => {
-            if (this.lastHeight == null) this.scrollToBottom()
-            if (intervalTime >= 200) clearInterval(interval)
-            intervalTime += 1
-          }, 1)
+          this.$nextTick(() => {
+            if (this.lastHeight == null) {
+              let interval = setInterval(() => {
+                if (this.lastHeight == null) this.scrollToBottom()
+                if (intervalTime >= 200) clearInterval(interval)
+                intervalTime += 1
+              }, 1)
+            }
+          })
         }
       }
     },

@@ -68,10 +68,10 @@ export default {
   methods: {
     adjustPostion () {
       this.position.left = null
-      this.position.right = -14
+      this.position.right = -13
       if (this.targetFromMe) {
         this.position.right = null
-        this.position.left = -14
+        this.position.left = -13
       }
     }
   },
