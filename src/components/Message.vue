@@ -18,7 +18,7 @@
         <img src="@/assets/loading.webp" style="height:18px;" />
       </div>
       <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
-        <reactionMenu :target="reactingMessage" :reactions="reactingMessageReactions" :guid="reactingMessageGUID" @close="closeReactionMenu" @sendReaction="sendReaction"></reactionMenu>
+        <reactionMenu :target="reactingMessage" :reactions="reactingMessageReactions" :guid="reactingMessageGUID" :part="reactingMessagePart" @close="closeReactionMenu" @sendReaction="sendReaction"></reactionMenu>
         <simplebar class="messages" ref="messages">
           <div v-for="(msg, i) in sortedMessages" :key="'msg'+msg.id">
             <div class="timegroup" v-html="dateGroup(i-1, i)" v-if="dateGroup(i-1, i) != ''"></div>
@@ -27,9 +27,15 @@
               <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
 
               <template v-for="(text, ii) in msg.texts">
-                <div :key="'wrapper'+ii" :ref="'msg'+msg.id+'-text'+ii" :id="'msg'+msg.id+'-text'+ii" @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions)" @mouseup.left="stopInterval" @mouseleave="stopInterval" class="textWrapper">
-                  <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions)" :target="'#msg'+msg.id+'-text'+ii" :reactions="text.reactions" v-if="text.attachments && text.attachments.length > 0 && $options.filters.twemoji(text.text) == ''" :targetFromMe="msg.sender == 1"></reactions>
-                  <div v-for="(attachment, index) in text.attachments" :key="`${ii}-${index}`" class="attachment">
+                <div :key="'wrapper'+ii" :id="'msg'+msg.id+'-text'+ii" class="textWrapper">
+                  <div
+                    v-for="(attachment, index) in text.attachments" :key="`${ii}-${index}`"
+                    class="attachment" :id="'msg'+msg.id+'-text'+ii+'-part'+index" 
+                    @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, index)"
+                    @mouseup.left="stopInterval" @mouseleave="stopInterval">
+                    <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, index)"
+                      :target="'#msg'+msg.id+'-text'+ii" :part="index" :reactions="text.reactions"
+                      :targetFromMe="msg.sender == 1"></reactions>
                     <template v-if="attachment[0] != '' && !attachment[0].includes('.pluginPayloadAttachment')">
                       <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
                       <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
@@ -37,15 +43,21 @@
                     </template>
                   </div>
 
-                  <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions)" :target="'#msg'+msg.id+'-text'+ii" :reactions="text.reactions" v-if="$options.filters.twemoji(text.text) != ''" :targetFromMe="msg.sender == 1"></reactions>
-                  <div
-                    class="message"
-                    :key="'msg'+msg.id+'-text'+ii"
-                    :class="(msg.texts.length-1 == ii ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
-                    :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
-                    v-if="$options.filters.twemoji(text.text) != ''">
-                    <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                  <div v-if="$options.filters.twemoji(text.text) != ''" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
+                    <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, text.attachments.length)"
+                      :target="'#msg'+msg.id+'-text'+ii" :part="text.attachments.length" 
+                      :reactions="text.reactions" :targetFromMe="msg.sender == 1"></reactions>
+                    <div
+                      class="message"
+                      @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, text.attachments.length)" @mouseup.left="stopInterval" @mouseleave="stopInterval"
+                      :key="'msg'+msg.id+'-text'+ii"
+                      :class="(msg.texts.length-1 == ii ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
+                      :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
+                      v-if="$options.filters.twemoji(text.text) != ''">
+                      <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                    </div>
                   </div>
+                  
                 </div>
                 <div class="receipt" :key="'msg'+msg.id+'-text'+ii+'-receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
                   <span class="type">{{ text.read > 0 ? "Read" : "Delivered" }}</span> {{ humanReadableTimestamp(text.read > 0 ? text.read : text.delivered) }}
@@ -129,7 +141,8 @@ export default {
       timeHolding: 0,
       reactingMessage: null,
       reactingMessageGUID: null,
-      reactingMessageReactions: null
+      reactingMessageReactions: null,
+      reactingMessagePart: 0
     }
   },
   computed: {
@@ -180,6 +193,7 @@ export default {
       this.reactingMessage = null
       this.reactingMessageGUID = null
       this.reactingMessageReactions = null
+      this.reactingMessagePart = 0
       if (this.$refs.uploadButton) {
         this.$refs.uploadButton.clear()
       }
@@ -198,12 +212,12 @@ export default {
     isVideo(type) {
       return type.includes('video/')
     },
-    startInterval (msgId, textId, guid, reactions) {
+    startInterval (msgId, textId, guid, reactions, part) {
       if (!this.interval) {
         this.interval = setInterval(() => {
           this.timeHolding++
           if (this.timeHolding > 7) { //> 0.7 seconds, will trigger at 0.8 seconds
-            this.openReactionMenu(msgId, textId, guid, reactions)
+            this.openReactionMenu(msgId, textId, guid, reactions, part)
             clearInterval(this.interval)
             this.interval = false
             this.timeHolding = 0
@@ -219,6 +233,8 @@ export default {
     closeReactionMenu () {
       this.reactingMessage = null
       this.reactingMessageGUID = null
+      this.reactingMessageReactions = null
+      this.reactingMessagePart = 0
     },
     dateGroup(prev, current) {
       let prevstamp = this.sortedMessages[prev] ? this.sortedMessages[prev].date : 0
@@ -353,18 +369,20 @@ export default {
         }
       })
     },
-    openReactionMenu (msgId, textId, guid, reactions) {
-      let el = $(this.$refs['msg'+msgId+'-text'+textId])
+    openReactionMenu (msgId, textId, guid, reactions, part) {
+      let el = $('#msg'+msgId+'-text'+textId+'-part'+part)
       this.reactingMessageReactions = reactions
       this.reactingMessageGUID = guid
+      this.reactingMessagePart = part
       this.reactingMessage = el
     },
-    sendReaction (reactionId, guid) {
+    sendReaction (reactionId, guid, part) {
       if (!this.messages[0]) return
       this.sendSocket({ action: 'sendReaction', data: {
         chatId: this.messages[0].chatId,
         guid: guid,
-        reactionId: reactionId
+        reactionId: reactionId,
+        part: part
       }})
     },
     sendText () {
@@ -565,7 +583,6 @@ export default {
           let oldMsgIndex = this.messages.findIndex(obj => obj.guid == message[0].guid)
           if (oldMsgIndex != -1) {
             this.messages[oldMsgIndex] = message[0]
-            this.messages.__ob__.notify()
             return
           }
 
@@ -592,7 +609,7 @@ export default {
           let intervalTime = 0
           let interval = setInterval(() => {
             if (this.lastHeight == null) this.scrollToBottom()
-            if (intervalTime >= 300) clearInterval(interval)
+            if (intervalTime >= 200) clearInterval(interval)
             intervalTime += 1
           }, 1)
         }
@@ -978,18 +995,25 @@ export default {
   }
 
   .attachment {
-    max-width: 60%;
-    max-height: 60vh;
+    max-width: 75%;
+    // max-height: 60vh;
+    width: auto;
+    height: auto;
     border-radius: 18px;
-    height: fit-content;
-    margin-bottom: -2px;
+    padding-bottom: 1px;
+    display: block;
+    // margin-bottom: -2px;
 
     img {
       // max-width: 280px;
       // max-height: 700px;
+      border-radius: 18px;
       border-radius: 12px;
       max-height: 60vh;
-      max-width: 60vh;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      display: block;
     }
 
     video {
@@ -997,7 +1021,10 @@ export default {
       // max-height: 700px;
       border-radius: 12px;
       max-height: 60vh;
-      max-width: 60vh;
+      max-width: 100%;
+      width: auto;
+      height: auto;
+      display: block;
     }
   }
 }
@@ -1007,6 +1034,7 @@ export default {
   padding: 6px 10px;
   margin-top: 0px;
   margin-bottom: 1px;
+  max-width: 100%;
   display: inline-block;
   text-align: start;
   unicode-bidi: plaintext;
@@ -1028,13 +1056,13 @@ export default {
     display: flex;
     align-items: flex-start;
     flex-direction: column;
-    width: 100%;
+    margin-right: 25%;
+    max-width: 75%;
   }
 
   .message {
     color: white;
-    margin-right: 25%;
-    max-width: 75%;
+    // margin-right: 25%;
     background-color: #3A3A3C;
     position: relative;
     overflow-wrap: break-word;
@@ -1090,15 +1118,15 @@ export default {
     display: flex;
     align-items: flex-end;
     flex-direction: column;
-    width: 100%;
+    margin-left: 25%;
+    max-width: 75%;
   }
 
   .message {
     color: white;
-    margin-left: 25%;
     background: #35CC5B;
     position: relative;
-    max-width: 75%;
+    // margin-left: 25%;
     overflow-wrap: break-word;
 
     a {

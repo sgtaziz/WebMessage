@@ -1,7 +1,13 @@
 <template>
   <transition name="slide-fade" mode="out-in">
     <div class="reactions" v-if="reactionList.length > 0" :class="{ left: !targetFromMe }">
-      <div v-for="(reaction, i) in reactionList" @click="click" :key="reaction.guid" class="bubble" :class="{ isMe: reaction.sender == 1 }" :style="{ zIndex: 4-i, top: position.top+'px', left: (position.left+(targetFromMe ? (-i*3) : (i*3)))+'px', right: position.right + 'px' }">
+      <div v-for="(reaction, i) in reactionList" @click="click" :key="reaction.guid"
+        class="bubble" :class="{ isMe: reaction.sender == 1 }"
+        :style="{
+          zIndex: 4-i, top: position.top+'px',
+          left: position.left ? ((position.left+(targetFromMe ? (-i*3) : (i*3)))+'px') : null,
+          right: position.right ? ((position.right+(targetFromMe ? (i*3) : (-i*3)))+'px') : null
+        }">
         <font-awesome-icon v-if="reaction.icon" :icon="reaction.icon.name" size="lg" :style="reaction.icon.style" />
       </div>
     </div>
@@ -15,18 +21,22 @@ export default {
     reactions: { type: Array },
     targetFromMe: { type: Boolean },
     target: { type: String },
+    part: { type: Number },
     click: { type: Function }
   },
   computed: {
     reactionList() {
-      let reactions = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000)
+      let reactions = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.forPart == this.part)
+      
+      let reactionFromMe = null
       reactions.forEach((reaction) => {
         let reactionId = reaction.reactionType
         let icon = this.icons.find(icon => icon.id == reactionId)
         reaction.icon = icon
+        // if (reaction.sender == 1) reactionFromMe = reaction
       })
 
-      return reactions.sort((a, b) => b.sender - a.sender).slice(0, 4)
+      return reactionFromMe ? reactions.slice(0, 3) : reactions.slice(0, 4)
     }
   },
   watch: {
@@ -44,7 +54,7 @@ export default {
         { name: 'exclamation', id: 2004 },
         { name: 'question', id: 2005 },
       ],
-      position: { top: -16, left: 0 }
+      position: { top: 4, left: 0 }
     }
   },
   mounted() {
@@ -57,12 +67,11 @@ export default {
   },
   methods: {
     adjustPostion () {
-      let target = $(this.target).children().last()
-      let padding = (target.css('padding-left') ? target.css('padding-left') : '0px').replace('px', '')
-
-      this.position.left = (target.width() - 12 + (padding * 2))
+      this.position.left = null
+      this.position.right = -14
       if (this.targetFromMe) {
-        this.position.left = (-target.width() - 16 - (padding * 2))
+        this.position.right = null
+        this.position.left = -14
       }
     }
   },
@@ -72,7 +81,9 @@ export default {
 <style lang="scss" scoped>
 .reactions {
   position: relative;
-  margin-top: 18px;
+  // margin-top: 18px;
+  height: 18px;
+  width: 100%;
 
   .bubble {
     background-color: #3A3A3C;
@@ -97,14 +108,15 @@ export default {
 }
 
 .slide-fade-enter-active {
-  transition: all .3s ease;
+  transition: all .2s ease;
 }
 .slide-fade-leave-active {
-  transition: all .3s ease;
+  transition: all .2s ease;
 }
 .slide-fade-enter, .slide-fade-leave-to {
   transform: scaleY(0);
   margin-top: 0px;
+  height: 0px;
   opacity: 0;
 }
 </style>

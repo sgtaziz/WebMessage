@@ -33,62 +33,76 @@ export default {
   props: {
     target: { type: Object },
     guid: { type: String },
+    part: { type: Number },
     reactions: { type: Array }
   },
   watch: {
     target(newTarget) {
       if (newTarget != null) {
-        let target = newTarget.children().last()
-        let parent = newTarget.parent()
-        let p = target.offset()
-        let w = target.width()
-        let h = target.height()
-        let clone = target.clone()
-
-        clone.css({
-          position: 'fixed',
-          top: p.top+'px',
-          left: p.left+'px',
-          width: w+'px',
-          height: h+'px',
-          margin: '0'
-        })
-
-        let msgWrapper = $('<div class="messages" style="display:contents;z-index:-1;"></div>')
-        $('<div></div>').attr('class', parent.attr('class')).appendTo(msgWrapper)
-        clone.appendTo(msgWrapper.children().first())
-        this.$nextTick(() => {
-          msgWrapper.appendTo('#reactionMenu')
-        })
-
-        this.clone = msgWrapper
-        this.direction = parent.hasClass('send') ? 'right' : 'left'
-        
-        this.position = { }
-        this.position.top = (p.top - 45) + 'px'
-        if (this.direction == 'right') {
-          this.position.right = 6 + 'px'
-        } else {
-          this.position.left = (p.left - 15) + 'px'
-        }
-
-        let activeReactionsList = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.sender == 1)
-        this.activeReactions = []
-        activeReactionsList.forEach((reaction) => {
-          this.activeReactions.push(reaction.reactionType)
-        })
+        this.adjustPostion()
+        window.removeEventListener('resize', this.adjustPostion)
+        window.addEventListener('resize', this.adjustPostion)
       } else {
         this.activeReactions = []
       }
     }
   },
-  mounted() {
-  },
   methods: {
+    adjustPostion () {
+      let newTarget = this.target
+      if (newTarget == null) return
+
+      let target = newTarget.children().last()
+      let parent = newTarget.parent().parent()
+      let p = target.offset()
+      let w = target.width()
+      let h = target.height()
+      let clone = target.parent().clone()
+
+      clone.css({
+        position: 'fixed',
+        top: p.top+'px',
+        left: p.left+'px',
+        width: target.parent().width()+'px',
+        height: target.parent().height()+'px',
+        margin: '0'
+      })
+
+      let reactionsBubble = clone.find('.reactions')
+      if (reactionsBubble) reactionsBubble.remove()
+
+      let msgWrapper = $('<div class="messages" style="display:contents;z-index:-1;"></div>')
+      $('<div></div>').attr('class', parent.attr('class')).appendTo(msgWrapper)
+      clone.appendTo(msgWrapper.children().first())
+      this.$nextTick(() => {
+        msgWrapper.appendTo('#reactionMenu')
+      })
+
+      if (this.clone) {
+        this.clone.remove()
+        this.clone = null
+      }
+      this.clone = msgWrapper
+      this.direction = parent.hasClass('send') ? 'right' : 'left'
+      
+      this.position = { }
+      this.position.top = (p.top - 45) + 'px'
+      if (this.direction == 'right') {
+        this.position.right = 6 + 'px'
+      } else {
+        this.position.left = (p.left - 15) + 'px'
+      }
+
+      let activeReactionsList = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.sender == 1 && reaction.forPart == this.part)
+      this.activeReactions = []
+      activeReactionsList.forEach((reaction) => {
+        this.activeReactions.push(reaction.reactionType)
+      })
+    },
     sendReaction (icon) {
       let id = icon.id
       if (this.activeReactions.includes(id)) id += 1000 //Remove reaction
-      this.$emit('sendReaction', id, this.guid)
+      this.$emit('sendReaction', id, this.guid, this.part)
       this.closeMenu()
     },
     closeMenu () {
@@ -98,7 +112,7 @@ export default {
           this.clone = null
           this.activeReactions = []
         }
-      }, 500)
+      }, 200)
 
       this.$emit('close')
     }
