@@ -9,7 +9,7 @@
     <div class="chatContent">
       <div class="title">
         <span class="author" v-html="$options.filters.twemoji(author)"></span>
-        <span class="date">{{ date | moment }}</span>
+        <span class="date">{{ date/1000 | moment }}</span>
       </div>
       <div class="text">
         <span v-html="trimmedText"></span>
@@ -65,11 +65,7 @@ export default {
         }
       }
 
-      let localDate = moment(ts).format("l")
-      let dateParts = localDate.split("/")
-      dateParts[2] = dateParts[2].substring(2)
-      let formattedDate = dateParts.join("/")
-      return formattedDate
+      return moment(ts).format("M/D/YY")
     }
   },
   methods: {

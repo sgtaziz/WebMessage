@@ -162,7 +162,7 @@ export default {
       let messages = this.messages
       let lastSentMessageFound = false
 
-      const groupDates = (date1, date2) => (date2 - date1 < 6000)
+      const groupDates = (date1, date2) => (date2 - date1 < 3600000)
       const groupAuthor = (author1, author2) => (author1 == author2)
 
       const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, reactions, ...rest }, i, arr) => {
@@ -178,7 +178,7 @@ export default {
         return r
       }, [])
 
-      return groupedMessages.reverse()
+      return groupedMessages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1)).reverse()
     }
   },
   watch: {
@@ -237,13 +237,13 @@ export default {
       this.reactingMessagePart = 0
     },
     dateGroup(prev, current) {
-      let prevstamp = this.sortedMessages[prev] ? this.sortedMessages[prev].date : 0
-      let currstamp = this.sortedMessages[current].date
+      let prevstamp = this.sortedMessages[prev] ? this.sortedMessages[prev].texts[0].date : 0
+      let currstamp = this.sortedMessages[current].texts[0].date
       let today = new Date().setHours(0,0,0,0)
 
-      if (prev == -1 || currstamp - prevstamp > 6000) {
+      if (prev == -1 || currstamp - prevstamp > 3600000) {
         let humanReadableStamp = this.humanReadableDay(currstamp)
-        return `<span class="bold">${humanReadableStamp}</span> ${moment(currstamp*1000).format('LT')}`
+        return `<span class="bold">${humanReadableStamp}</span> ${moment(currstamp).format('LT')}`
       } else {
         return ""
       }
@@ -286,29 +286,30 @@ export default {
       return msgText.replace(' ', '').replace(regex, '').length == 0 && msgText.replace(' ', '').length <= 8
     },
     humanReadableDay (date) {
-      let ts = date*1000
+      let ts = date
+      let today = new Date()
       let tsDate = new Date(ts).setHours(0,0,0,0)
-
+      
       if (new Date().setHours(0,0,0,0) == tsDate) {
         return 'Today'
       } else if (tsDate >= new Date().setHours(0,0,0,0) - 86400000) {
         return 'Yesterday'
       } else {
-        let today = new Date()
         let lastWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7).setHours(0,0,0,0)
         if (ts >= lastWeek) {
           return moment(ts).format('dddd')
         }
       }
 
-      let localDate = moment(ts).format("l")
-      let dateParts = localDate.split("/")
-      dateParts[2] = dateParts[2].substring(2)
-      let formattedDate = dateParts.join("/")
-      return formattedDate
+      let lastYear = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate()).setHours(0,0,0,0)
+      if (ts < lastYear) {
+        return moment(ts).format('ll') + ','
+      }
+
+      return moment(ts).format('ddd, MMM D') + ','
     },
     humanReadableTimestamp (date) {
-      let ts = date*1000
+      let ts = date
       let tsDate = new Date(ts).setHours(0,0,0,0)
 
       if (new Date().setHours(0,0,0,0) == tsDate) {
@@ -323,11 +324,7 @@ export default {
         }
       }
 
-      let localDate = moment(ts).format("l")
-      let dateParts = localDate.split("/")
-      dateParts[2] = dateParts[2].substring(2)
-      let formattedDate = dateParts.join("/")
-      return formattedDate
+      return moment(ts).format("M/D/YY")
     },
     fetchMessages () {
       if (this.offset == 0 && this.$store.state.messagesCache[this.$route.params.id]) {
@@ -424,8 +421,8 @@ export default {
 
         if (document.getElementById('twemoji-textarea') && !this.lastHeight) document.getElementById('twemoji-textarea').focus()
 
-        $(document).off('click', 'a[href^="http"]')
-        $(document).on('click', 'a[href^="http"]', function(event) {
+        $(document).off('click', '.message a[href^="http"]')
+        $(document).on('click', '.message a[href^="http"]', function(event) {
           event.preventDefault()
           shell.openExternal(this.href)
         })
@@ -551,7 +548,7 @@ export default {
       this.postLoad()
     },
     setAsRead (data) {
-      if (this.$route.params.id == 'new') return
+      if (this.$route.params.id == 'new' || !data) return
       if (this.messages[0]['chatId'] == data.chatId || this.$route.params.id == data.chatId) {
         let messageIndex = this.messages.findIndex(obj => obj.guid == data.guid)
         if (messageIndex > -1) {
@@ -999,7 +996,7 @@ export default {
   }
 
   .attachment {
-    max-width: 75%;
+    // max-width: 75%;
     // max-height: 60vh;
     width: auto;
     height: auto;
@@ -1037,11 +1034,15 @@ export default {
   border-radius: 18px;
   padding: 6px 10px;
   margin-top: 0px;
-  margin-bottom: 1px;
+  margin-bottom: 0px;
   max-width: 100%;
   display: inline-block;
   text-align: start;
   unicode-bidi: plaintext;
+}
+
+.bubbleWrapper {
+  max-width: 100%;
 }
 
 .send.iMessage {
@@ -1062,6 +1063,7 @@ export default {
     flex-direction: column;
     margin-right: 25%;
     max-width: 75%;
+    margin-bottom: 1px;
   }
 
   .message {
@@ -1124,6 +1126,7 @@ export default {
     flex-direction: column;
     margin-left: 25%;
     max-width: 75%;
+    margin-bottom: 1px;
   }
 
   .message {

@@ -36,7 +36,7 @@ export default {
         // if (reaction.sender == 1) reactionFromMe = reaction
       })
 
-      return reactionFromMe ? reactions.slice(0, 3) : reactions.slice(0, 4)
+      return (reactionFromMe ? reactions.slice(0, 3) : reactions.slice(0, 4)).sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
     }
   },
   watch: {

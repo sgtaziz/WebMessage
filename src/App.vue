@@ -87,7 +87,7 @@ export default {
     filteredChats() {
       return this.chats.filter((chat) => {
         return chat.author.toLowerCase().includes(this.search.toLowerCase()) || chat.text.toLowerCase().includes(this.search.toLowerCase())
-      })
+      }).sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
     },
     statusColor () {
       if (this.status == 0) {
