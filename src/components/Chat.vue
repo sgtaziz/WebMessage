@@ -8,7 +8,10 @@
     </div>
     <div class="chatContent">
       <div class="title">
-        <span class="author" v-html="$options.filters.twemoji(author)"></span>
+        <span class="author">
+          <span class="name" v-html="$options.filters.twemoji(author)"></span>
+          <span v-if="showNum" class="number"> ({{ this.chatid }})</span>
+        </span>
         <span class="date">{{ date/1000 | moment }}</span>
       </div>
       <div class="text">
@@ -32,7 +35,8 @@ export default {
     author: { type: String },
     text: { type: String },
     date: { type: Number },
-    read: { type: Boolean }
+    read: { type: Boolean },
+    showNum: { type: Boolean }
   },
   data () {
     return {
@@ -161,6 +165,11 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+
+    .number {
+      font-weight: 200;
+      font-size: 12px;
+    }
   }
 
   .date {

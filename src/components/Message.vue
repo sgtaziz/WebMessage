@@ -43,7 +43,7 @@
                     </template>
                   </div>
 
-                  <div v-if="$options.filters.twemoji(text.text) != ''" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
+                  <div v-if="$options.filters.twemoji(text.text) != '' || text.undisplayable" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
                     <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, text.attachments.length)"
                       :target="'#msg'+msg.id+'-text'+ii" :part="text.attachments.length" 
                       :reactions="text.reactions" :targetFromMe="msg.sender == 1"></reactions>
@@ -52,9 +52,15 @@
                       @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, text.attachments.length)" @mouseup.left="stopInterval" @mouseleave="stopInterval"
                       :key="'msg'+msg.id+'-text'+ii"
                       :class="(msg.texts.length-1 == ii ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
-                      :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''"
-                      v-if="$options.filters.twemoji(text.text) != ''">
-                      <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                      :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''">
+                      <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-if="!text.undisplayable" v-linkified></span>
+                      <div style="white-space: pre-wrap;text-align:center;" v-else>
+                        <div style="font-weight:500;font-size:14px;">Unsupported Type</div>
+                        <div style="font-size:11px;margin-top:4px;">
+                          This message cannot be viewed by WebMessage.
+                        </div>
+                        <feather type="frown" style="height:24px;" stroke="rgb(29,29,29)" size="16"></feather>
+                      </div>
                     </div>
                   </div>
                   
@@ -111,6 +117,7 @@ import UploadButton from './UploadButton'
 import ReactionMenu from './ReactionMenu'
 import Reactions from './Reactions'
 import axios from 'axios'
+import { parseBuffer } from 'bplist-parser'
 
 export default {
   name: 'Message',
@@ -159,26 +166,49 @@ export default {
       return groups
     },
     sortedMessages() {
-      let messages = this.messages
+      let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
       let lastSentMessageFound = false
 
       const groupDates = (date1, date2) => (date2 - date1 < 3600000)
       const groupAuthor = (author1, author2) => (author1 == author2)
 
-      const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, reactions, ...rest }, i, arr) => {
+      const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, reactions, payload, ...rest }, i, arr) => {
         const prev = arr[i +-1]
+        let extras = { }
+
+        if (payload) {
+          try {
+            const data = new Buffer.from(payload, 'base64')
+            const payloadBuffer = parseBuffer(data)
+            let parsedData = {}
+            let lastClassname = 'root'
+
+            payloadBuffer[0].$objects.forEach(object => {
+              if (object.$classname) lastClassname = object.$classname
+              if (typeof object != 'string' || object == 'website' || object == '$null' || object.startsWith('image/')) return
+              if (lastClassname == 'NSUUID') throw Error('MSMessage payload')
+              if (!parsedData[lastClassname]) parsedData[lastClassname] = []
+
+              parsedData[lastClassname].push(object)
+            })
+
+            extras.data = parsedData
+          } catch (error) {
+            extras.undisplayable = true
+          }
+        }
 
         if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date))
-            r[r.length - 1].texts.unshift({ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound })
+            r[r.length - 1].texts.unshift({ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras })
         else
-          r.push({ ...rest, texts: [{ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound }] })
+          r.push({ ...rest, texts: [{ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras }] })
 
         if (rest.sender == 1 && !lastSentMessageFound) lastSentMessageFound = true
         
         return r
       }, [])
 
-      return groupedMessages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1)).reverse()
+      return groupedMessages.reverse()
     }
   },
   watch: {
@@ -283,7 +313,7 @@ export default {
     isEmojis(msgText) {
       const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}/gu
 
-      return msgText.replace(' ', '').replace(regex, '').length == 0 && msgText.replace(' ', '').length <= 8
+      return msgText.replace(' ', '').replace(regex, '').length == 0 && msgText.replace(' ', '').length <= 8 &&  msgText.replace(' ', '').length != 0
     },
     humanReadableDay (date) {
       let ts = date

@@ -42,6 +42,7 @@
           :date="chat.date"
           :read="chat.read"
           :docid="chat.docid"
+          :showNum="chat.showNum"
           @deleted="deleteChat(chat)">
         </chat>
       </simplebar>
@@ -85,7 +86,23 @@ export default {
   },
   computed: {
     filteredChats() {
-      return this.chats.filter((chat) => {
+      let chats = this.chats
+
+      if (chats.length > 0) {
+        chats = chats.reduce((r, chat) => {
+          chat.showNum = false
+          
+          let duplicateIndex = this.chats.findIndex(obj => obj.author == chat.author && obj.address != chat.address)
+          if (duplicateIndex > -1 && !chat.address.startsWith('chat') && (chat.address.startsWith('+') || chat.address.includes('@'))) {
+            chat.showNum = true
+          }
+
+          r.push(chat)
+          return r
+        }, [])
+      }
+
+      return chats.filter((chat) => {
         return chat.author.toLowerCase().includes(this.search.toLowerCase()) || chat.text.toLowerCase().includes(this.search.toLowerCase())
       }).sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
     },
