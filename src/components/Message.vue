@@ -312,7 +312,8 @@ export default {
       this.$nextTick(this.autoCompleteHooks)
     },
     isEmojis(msgText) {
-      const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}/gu
+      const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}|[\u180B-\u180D\uFE00-\uFE0F]/gu
+      msgText = msgText.replace(/\u{fffc}/gu, "")
 
       return msgText.replace(' ', '').replace(regex, '').length == 0 && msgText.replace(' ', '').length <= 8 &&  msgText.replace(' ', '').length != 0
     },
