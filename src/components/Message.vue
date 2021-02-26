@@ -53,7 +53,9 @@
                       :key="'msg'+msg.id+'-text'+ii"
                       :class="(msg.texts.length-1 == ii ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
                       :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''">
-                      <span style="white-space: pre-wrap;" v-html="$options.filters.twemoji(text.text)" v-if="!text.undisplayable" v-linkified></span>
+                      <div class="subject" v-if="text.subject && text.subject != ''" v-html="$options.filters.twemoji(text.subject)"></div>
+
+                      <span style="white-space: pre-wrap;" v-if="!text.undisplayable" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
                       <div style="white-space: pre-wrap;text-align:center;" v-else>
                         <div style="font-weight:500;font-size:14px;">Unsupported Type</div>
                         <div style="font-size:11px;margin-top:4px;">
@@ -82,18 +84,24 @@
               {{ attachment.name }}
             </div>
           </div>
-          <twemoji-textarea @contentChanged="autoResize" placeholder="Send a message..."
-            :emojiData="emojiDataAll"
-            :emojiGroups="emojiGroups"
-            :initialContent="messageText[$route.params.id]"
-            :class="hasAttachments ? 'withAttachments' : ''"
-            @enterKey="sendText">
-            <template v-slot:twemoji-picker-button>
-              <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
-            </template>
-          </twemoji-textarea>
-          <img src="@/assets/loading.webp" style="height:22px;" v-if="!canSend" />
+          <div class="msgTextboxWrapper">
+            <input type="text" v-if="$store.state.subjectLine" class="subjectLine" ref="subjectLine" placeholder="Subject" @keyup.enter.exact="sendText" :class="{ noTopBorder: hasAttachments }">
+            <twemoji-textarea @contentChanged="autoResize" :placeholder="this.messages[0].type.replace('SMS', 'Text Message')"
+              :emojiData="emojiDataAll"
+              :emojiGroups="emojiGroups"
+              :initialContent="messageText[$route.params.id]"
+              :class="(hasAttachments || $store.state.subjectLine) ? 'noTopBorder' : ''"
+              @enterKey="sendText">
+              <template v-slot:twemoji-picker-button>
+                <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
+              </template>
+            </twemoji-textarea>
+          </div>
+          <img src="@/assets/loading.webp" style="height:26px;float:right;" v-if="!canSend" />
           <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
+          <div class="sendBtn" :class="{ cantSend: !canSend }" @click="sendText">
+            <feather type="arrow-up" size="20"></feather>
+          </div>
         </div>
       </template>
     </div>
@@ -173,7 +181,7 @@ export default {
       const groupDates = (date1, date2) => (date2 - date1 < 3600000)
       const groupAuthor = (author1, author2) => (author1 == author2)
 
-      const groupedMessages = messages.reduce((r, { text, dateRead, dateDelivered, guid, reactions, payload, ...rest }, i, arr) => {
+      const groupedMessages = messages.reduce((r, { text, subject, dateRead, dateDelivered, guid, reactions, payload, ...rest }, i, arr) => {
         const prev = arr[i +-1]
         let extras = { }
 
@@ -200,9 +208,9 @@ export default {
         }
 
         if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date))
-            r[r.length - 1].texts.unshift({ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras })
+            r[r.length - 1].texts.unshift({ text: text, subject: subject, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras })
         else
-          r.push({ ...rest, texts: [{ text: text, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras }] })
+          r.push({ ...rest, texts: [{ text: text, subject: subject, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras }] })
 
         if (rest.sender == 1 && !lastSentMessageFound) lastSentMessageFound = true
         
@@ -227,6 +235,9 @@ export default {
       this.reactingMessagePart = 0
       if (this.$refs.uploadButton) {
         this.$refs.uploadButton.clear()
+      }
+      if (this.$refs.subjectLine) {
+        this.$refs.subjectLine.value = ''
       }
 
       this.autoCompleteHooks()
@@ -312,10 +323,14 @@ export default {
       this.$nextTick(this.autoCompleteHooks)
     },
     isEmojis(msgText) {
-      const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}|[\u180B-\u180D\uFE00-\uFE0F]/gu
+      const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}/gu
+      const variationSelector = /[\u180B-\u180D\uFE00-\uFE0F]|\uDB40[\uDD00-\uDDEF]/gu
+
       msgText = msgText.replace(/\u{fffc}/gu, "")
 
-      return msgText.replace(' ', '').replace(regex, '').length == 0 && msgText.replace(' ', '').length <= 8 &&  msgText.replace(' ', '').length != 0
+      return msgText.replace(' ', '').replace(regex, '').replace(variationSelector, '').length == 0 
+             && msgText.replace(' ', '').replace(variationSelector, '').length <= 8
+             && msgText.replace(' ', '').length != 0
     },
     humanReadableDay (date) {
       let ts = date
@@ -415,20 +430,29 @@ export default {
       }})
     },
     sendText () {
-      let messageText = this.messageText[this.$route.params.id]
-      if (!messageText) messageText = ''
-      if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
       if (!this.canSend) return
+
+      let messageText = this.messageText[this.$route.params.id]
+      let subjectText = this.$refs.subjectLine ? this.$refs.subjectLine.value : ''
+
+      if (messageText == '' && subjectText != '') {
+        messageText = subjectText
+        subjectText = ''
+      }
+
+      if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
       this.canSend = false
 
       let textObj = {
         text: messageText,
         attachments: this.$refs.uploadButton.attachments,
-        address: this.messages[0] ? this.messages[0].chatId : this.receiver
+        address: this.messages[0] ? this.messages[0].chatId : this.receiver,
+        subject: subjectText
       }
       
       document.getElementById("twemoji-textarea").innerHTML = ""
       this.messageText[this.$route.params.id] = ""
+      if (this.$refs.subjectLine) this.$refs.subjectLine.value = ""
 
       axios.post(this.$store.getters.httpURI+'/sendText', textObj)
         .then(response => {
@@ -669,7 +693,7 @@ export default {
 .attachmentPreview {
   border: 1px solid #545454;
   margin-left: 32px;
-  margin-right: 32px;
+  margin-right: 64px;
   margin-bottom: -1px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
@@ -742,9 +766,41 @@ export default {
   }
 }
 
+.msgTextboxWrapper {
+  .subjectLine {
+    border:none;
+    background-image: none;
+    background-color: transparent;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    outline: none;
+
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+    margin-left: 32px;
+    width: calc(100% - 118px);
+    background: #1d1d1d !important;
+    border: 1px solid #545454 !important;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    margin-bottom: -1px;
+    color: white;
+    padding-left: 10px;
+    padding-right: 10px;
+    line-height: 20px;
+    font-weight: 500;
+    letter-spacing: 0.25px;
+
+    &.noTopBorder {
+      border-top-left-radius: 0px;
+      border-top-right-radius: 0px;
+    }
+  }
+}
+
 #twemoji-textarea-outer {
   background-color: transparent !important;
-  width: calc(100% - 26px);
+  width: calc(100% - 58px);
   float: left;
 
   #twemoji-textarea {
@@ -765,6 +821,7 @@ export default {
     flex-grow: 90;
     border-radius: 14px !important;
     padding-left: 10px !important;
+    padding-right: 10px !important;
     background: rgba(29,29,29, 1) !important;
     border: 1px solid #545454 !important;
     line-height: 21px !important;
@@ -780,7 +837,7 @@ export default {
     }
   }
 
-  &.withAttachments {
+  &.noTopBorder {
     #twemoji-textarea {
       border-top-right-radius: 0px !important;
       border-top-left-radius: 0px !important;
@@ -920,8 +977,40 @@ export default {
 
   .feather {
     &:hover {
-      fill: lighten(rgb(152,152,152), 20%);
-      cursor: pointer;
+      filter: brightness(115%);
+    }
+    cursor: pointer;
+  }
+
+  .sendBtn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2284FF;
+    float: right;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    margin-right: 6px;
+
+    svg {
+      stroke: rgb(255,255,255);
+      cursor: initial;
+    }
+
+    &.cantSend {
+      filter: brightness(40%);
+      cursor: initial;
+    }
+
+    &:not(.cantSend) {
+      .feather {
+        cursor: pointer;
+      }
+      &:hover {
+        filter: brightness(115%);
+      }
     }
   }
 }
@@ -1071,6 +1160,12 @@ export default {
   display: inline-block;
   text-align: start;
   unicode-bidi: plaintext;
+
+  .subject {
+    white-space: pre-wrap;
+    font-weight: 500;
+    letter-spacing: 0.25px;
+  }
 }
 
 .bubbleWrapper {

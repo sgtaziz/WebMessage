@@ -1,26 +1,29 @@
 <template>
-  <div class="chatContainer" :class="this.$route.path == '/message/'+this.chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate"
-  @mouseover="showDelete = true" @mouseout="showDelete = false">
-    <div class="unread" :style="read ? 'background-color: transparent;' : ''"></div>
-    <div class="avatarContainer">
-      <img v-if='(docid && docid != 0)' class="avatar" :src="`${$store.getters.httpURI}/contactimg?docid=${encodeURIComponent(docid)}&auth=${encodeURIComponent($store.state.password)}`" />
-      <img v-else class="avatar" src="../assets/profile.jpg" />
+  <div class="chatContainer" :class="this.$route.path == '/message/'+this.chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate">
+    <div class="chatWrapper" @mousedown="dragMouseDown" :style="{ left: '-'+slideX+'px' }">
+      <div class="unread" :style="read ? 'background-color: transparent;' : ''"></div>
+      <div class="avatarContainer">
+        <img v-if='(docid && docid != 0)' class="avatar" :src="`${$store.getters.httpURI}/contactimg?docid=${encodeURIComponent(docid)}&auth=${encodeURIComponent($store.state.password)}`" />
+        <img v-else class="avatar" src="../assets/profile.jpg" />
+      </div>
+      <div class="chatContent">
+        <div class="title">
+          <span class="author">
+            <span class="name" v-html="$options.filters.twemoji(author)"></span>
+            <span v-if="showNum" class="number"> ({{ this.chatid }})</span>
+            <feather type="bell-off" stroke="rgb(85,85,85)" size="13" v-if="$store.state.mutedChats.includes(chatid)"></feather>
+          </span>
+          <span class="date">{{ date/1000 | moment }}</span>
+        </div>
+        <div class="text">
+          <span v-html="trimmedText"></span>
+        </div>
+      </div>
     </div>
-    <div class="chatContent">
-      <div class="title">
-        <span class="author">
-          <span class="name" v-html="$options.filters.twemoji(author)"></span>
-          <span v-if="showNum" class="number"> ({{ this.chatid }})</span>
-        </span>
-        <span class="date">{{ date/1000 | moment }}</span>
-      </div>
-      <div class="text">
-        <span v-html="trimmedText"></span>
-      </div>
-      <div class="delete" v-show="showDelete" @click="deleteChat">
-        <feather type="x-circle" stroke="rgba(255,0,0,0.7)" :fill="this.$route.path == '/message/'+this.chatid ? '#2284FF' : 'rgba(45,45,45,0.8)'" size="15"></feather>
-      </div>
-    </div>
+    <div class="slidableDiv" :style="{ left: 'calc(100% - '+slideX+'px)' }">
+      <div class="hideAlerts" @click="hideAlerts">{{ $store.state.mutedChats.includes(chatid) ? 'Unhide Alerts' : 'Hide Alerts' }}</div>
+      <div class="deleteChat" @click="deleteChat">Delete</div>
+    </div>  
   </div>
 </template>
 
@@ -40,7 +43,10 @@ export default {
   },
   data () {
     return {
-      showDelete: false
+      initialX: 0,
+      slideX: 0,
+      closingSlider: false,
+      sliderWidth: 120,
     }
   },
   computed: {
@@ -80,7 +86,62 @@ export default {
         this.$router.push('/message/'+this.chatid)
       }
     },
+    dragMouseDown (e) {
+      e.preventDefault()
+      if (this.closingSlider) return
+      this.initialX = e.clientX
+      if (this.slideX > 0) {
+        this.closeDragElement()
+      }
+      
+      document.onmousemove = this.elementDrag
+      document.onmouseup = this.finishDragElement
+    },
+    elementDrag (e) {
+      e.preventDefault()
+      if (this.closingSlider) return
+      if (this.initialX - e.clientX < 0 || this.initialX - e.clientX > this.sliderWidth) return
+      this.slideX = this.initialX - e.clientX
+    },
+    closeDragElement () {
+      this.closingSlider = true
+      let interval = setInterval(() => {
+        if (this.slideX <= 0) {
+          this.closingSlider = false
+          this.slideX = 0
+          this.initialX = 0
+          clearInterval(interval)
+          return
+        }
+        
+        this.slideX -= 3
+      }, 6)
+
+      document.onmouseup = null
+      document.onmousemove = null
+    },
+    finishDragElement () {
+      if (this.closingSlider) return
+      if (this.slideX >= (this.sliderWidth/2.2)) {
+        let interval = setInterval(() => {
+          if (this.closingSlider) return
+          if (this.slideX >= this.sliderWidth) {
+            this.slideX = this.sliderWidth
+            clearInterval(interval)
+            return
+          }
+          
+          this.slideX += 3
+        }, 6)
+      } else {
+        this.closeDragElement()
+      }
+
+      document.onmouseup = null
+      document.onmousemove = null
+    },
     deleteChat () {
+      this.closeDragElement()
       this.$confirm({
         title: 'Warning',
         message: `Are you sure you want to delete your messages from ${this.author}? This cannot be undone.`,
@@ -95,6 +156,10 @@ export default {
           }
         }
       })
+    },
+    hideAlerts () {
+      this.closeDragElement()
+      this.$store.commit(this.$store.state.mutedChats.includes(this.chatid) ? 'unmuteChat' : 'muteChat', this.chatid)
     }
   }
 }
@@ -110,23 +175,6 @@ export default {
     float: left;
     margin-left: 2px;
     margin-top: 26px;
-  }
-
-  .delete {
-    position: absolute;
-    top: 25px;
-    right: 4px;
-    padding: 0px 3px;
-    cursor: pointer;
-
-    display: inherit !important; /* override v-show display: none */
-    transition: opacity 0.2s;
-
-    &[style*="display: none;"] {
-      opacity: 0;
-      pointer-events: none; /* disable user interaction */
-      user-select: none; /* disable user selection */
-    }
   }
 
   .chatContent {
@@ -168,12 +216,17 @@ export default {
 
     .number {
       font-weight: 200;
-      font-size: 12px;
+      font-size: 11px;
+    }
+
+    i {
+      padding-left: 4px;
+      vertical-align: middle;
     }
   }
 
   .date {
-    font-weight: 200;
+    font-weight: 300;
     padding-right: 10px;
     float: right;
     color: rgb(157,157,157);
@@ -197,6 +250,8 @@ export default {
     width: 300px;
     height: 64px;
     border-radius: 5px;
+    position: relative;
+    overflow: hidden;
 
     &.active {
       background-color: #2284FF;
@@ -211,6 +266,42 @@ export default {
         .date {
           color: #A9D5FF;
         }
+      }
+    }
+
+    .chatWrapper {
+      height: inherit;
+      position: absolute;
+      width: inherit;
+    }
+
+    .slidableDiv {
+      position: absolute;
+      left: 100%;
+      display: flex;
+      width: 120px;
+      height: 100%;
+
+      div {
+        display: flex;
+        flex: 1 1 0px;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 400;
+        cursor: pointer;
+
+        &:hover {
+          filter: brightness(85%);
+        }
+      }
+
+      .deleteChat {
+        background: #FF3B2F;
+      }
+
+      .hideAlerts {
+        background: #5959D1;
       }
     }
   }

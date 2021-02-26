@@ -15,14 +15,17 @@ export default new Vuex.Store({
     fallbackIpAddress: persistentStore.get('fallbackIpAddress', ''),
     port: persistentStore.get('port', 8180),
     ssl: persistentStore.get('ssl', true),
-    playsound: persistentStore.get('playsound', true),
+    subjectLine: persistentStore.get('subjectLine', false),
+    systemSound: persistentStore.get('systemSound', false),
     startup: persistentStore.get('startup', false),
     minimize: persistentStore.get('minimize', true),
     macstyle: persistentStore.get('macstyle', true),
     acceleration: persistentStore.get('acceleration', true),
     messagesCache: [],
     enableTunnel: persistentStore.get('enableTunnel', false),
-    cacheMessages: persistentStore.get('cacheMessages', false)
+    cacheMessages: persistentStore.get('cacheMessages', false),
+    mutedChats: persistentStore.get('mutedChats', []),
+    notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3')
   },
   mutations: {
     setPassword(state, password) {
@@ -46,9 +49,13 @@ export default new Vuex.Store({
       state['ssl'] = ssl
       persistentStore.set('ssl', ssl)
     },
-    setPlaySound(state, playsound) {
-      state['playsound'] = playsound
-      persistentStore.set('playsound', playsound)
+    setSubjectLine(state, subjectLine) {
+      state['subjectLine'] = subjectLine
+      persistentStore.set('subjectLine', subjectLine)
+    },
+    setSystemSound(state, systemSound) {
+      state['systemSound'] = systemSound
+      persistentStore.set('systemSound', systemSound)
     },
     setStartup(state, startup) {
       state['startup'] = startup
@@ -71,6 +78,10 @@ export default new Vuex.Store({
       state['enableTunnel'] = enableTunnel
       persistentStore.set('enableTunnel', enableTunnel)
     },
+    setNotifSound(state, notifSound) {
+      state['notifSound'] = notifSound
+      persistentStore.set('notifSound', notifSound)
+    },
     setCacheMessages(state, cacheMessages) {
       state['cacheMessages'] = cacheMessages
       persistentStore.set('cacheMessages', cacheMessages)
@@ -78,6 +89,19 @@ export default new Vuex.Store({
     addMessages(state, messages) {
       if (!state['messagesCache'][messages.id]) state['messagesCache'][messages.id] = []
       state['messagesCache'][messages.id] = messages.data
+    },
+    muteChat(state, chatId) {
+      if (state.mutedChats.includes(chatId)) return
+      state.mutedChats.push(chatId)
+      persistentStore.set('mutedChats', state.mutedChats)
+    },
+    unmuteChat(state, chatId) {
+      if (!state.mutedChats.includes(chatId)) return
+      const index = state.mutedChats.indexOf(chatId)
+      if (index > -1) {
+        state.mutedChats.splice(index, 1)
+      }
+      persistentStore.set('mutedChats', state.mutedChats)
     },
     resetMessages(state) {
       state['messagesCache'] = []

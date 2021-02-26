@@ -199,6 +199,7 @@ export default {
       this.chats = []
       this.$store.commit('resetMessages')
       this.$router.push('/').catch(()=>{})
+      this.notifSound = new Audio(this.$store.state.notifSound)
 
       const baseURI = this.$store.getters.baseURI
       this.$connect(baseURI, {
@@ -300,7 +301,7 @@ export default {
       this.win.on('move', this.onMove)
     })
 
-    this.notifSound = new Audio('wm-audio://receivedText.mp3')
+    this.notifSound = new Audio(this.$store.state.notifSound)
 
     if (!(this.$store.state.macstyle || process.platform === 'darwin')) {
       document.body.style.border = 'none'
@@ -351,17 +352,19 @@ export default {
         }
 
         if (messageData.sender != 1 && remote.Notification.isSupported()) {
+          if (this.$store.state.mutedChats.includes(messageData.personId)) return
+          
           const notification = {
             title: messageData.name,
             body: messageData.text,
-            silent: this.$store.state.playsound
+            silent: !this.$store.state.systemSound
           }
 
           if (process.platform === 'win32') {
             notification.icon = __static + '/icon.png'
           }
 
-          if (this.$store.state.playsound) this.notifSound.play()
+          if (!this.$store.state.systemSound) this.notifSound.play()
           let notif = new remote.Notification(notification)
           notif.on('click', (event, arg) => {
             if (chatData && chatData.id) {
@@ -535,7 +538,7 @@ export default {
   }
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@200;300;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css?family=Roboto:light,regular,medium,thin,italic,mediumitalic,bold');
 
 html {
   height: 100%;
@@ -637,6 +640,26 @@ body {
       color: #42b983;
     }
   }
+
+  input:not([type="range"]):not([type="color"]):not(.message-input) {
+    height: auto;
+    height: inherit;
+    font-size: 13px;
+    height: 6px;
+    padding: 10px 6px 10px 6px;
+    outline: none;
+    border: 1px solid rgb(213, 213, 213);
+    margin: 5px;
+    cursor: text;
+    -webkit-app-region: no-drag;
+  }
+
+  input:not([type="range"]):not([type="color"]):not(.message-input):focus {
+    border-radius: 1px;
+    box-shadow: 0px 0px 0px 3.5px rgba(23, 101, 144, 1);
+    animation: showFocus .3s;
+    border-color: rgb(122, 167, 221) !important;
+  }
 }
 
 .titlebar {
@@ -734,26 +757,6 @@ body {
   border-bottom-right-radius: 10px;
   border-left: 1px solid #000;
   overflow: hidden;
-}
-
-input:not([type="range"]):not([type="color"]):not(.message-input) {
-  height: auto;
-  height: inherit;
-  font-size: 13px;
-  height: 6px;
-  padding: 10px 6px 10px 6px;
-  outline: none;
-  border: 1px solid rgb(213, 213, 213);
-  margin: 5px;
-  cursor: text;
-  -webkit-app-region: no-drag;
-}
-
-input:not([type="range"]):not([type="color"]):not(.message-input):focus {
-  border-radius: 1px;
-  box-shadow: 0px 0px 0px 3.5px rgba(23, 101, 144, 1);
-  animation: showFocus .3s;
-  border-color: rgb(122, 167, 221) !important;
 }
 
 @keyframes showFocus {

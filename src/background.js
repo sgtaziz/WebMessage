@@ -295,6 +295,19 @@ function registerLocalAudioProtocol () {
       )
     }
   })
+  protocol.registerFileProtocol('local-file', (request, callback) => {
+    const url = request.url.replace(/^local-file:\/\//, '')
+    // Decode URL to prevent errors when loading filenames with UTF-8 chars or chars like "#"
+    const decodedUrl = decodeURI(url) // Needed in case URL contains spaces
+    try {
+      return callback(decodedUrl)
+    } catch (error) {
+      console.error(
+        'ERROR: registerLocalAudioProtocol: Could not get file path:',
+        error
+      )
+    }
+  })
 }
 
 function registerShortcuts () {

@@ -6,48 +6,69 @@
 
       <div class="modal__dialog">
         <h3>Settings</h3>
-        <input type="password" placeholder="Password" class="textinput" v-model="password" />
-        <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" :disabled="this.enableTunnel"/>
-        <div class="tunnelToggle">
-          <feather type="circle" size="20" @click="toggleTunnel" :fill="relayColor" v-popover:tunnel.bottom></feather>
+          <div class="settingsWrapper">
+          <div class="settingsColumn">
+            <h4>Tweak</h4>
+            <input type="password" placeholder="Password" class="textinput" v-model="password" />
+            <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" :disabled="this.enableTunnel"/>
+            <div class="tunnelToggle">
+              <feather type="circle" size="20" @click="toggleTunnel" :fill="relayColor" v-popover:tunnel.bottom></feather>
+            </div>
+            <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
+            <label class="switch">
+              <input type="checkbox" v-model="ssl">
+              <i></i>
+              <div>Enable SSL</div>
+            </label>
+          </div>
+          <div class="settingsColumn">
+            <h4>Client</h4>
+            <label class="switch">
+              <input type="checkbox" v-model="subjectLine">
+              <i></i>
+              <div>Enable subject line</div>
+            </label>
+            <label class="switch">
+              <input type="checkbox" v-model="systemSound">
+              <i></i>
+              <div>Use system notification sound</div>
+            </label>
+            <label class="switch">
+              <input type="checkbox" v-model="cacheMessages">
+              <i></i>
+              <div>Precache messages <span style="color: rgba(255,0,0,0.8);font-size: 12px;">More battery drain</span></div>
+            </label>
+            <label class="switch">
+              <input type="checkbox" v-model="startup">
+              <i></i>
+              <div>Launch on startup</div>
+            </label>
+            <label class="switch">
+              <input type="checkbox" v-model="minimize">
+              <i></i>
+              <div>Keep in tray</div>
+            </label>
+            <label class="switch" v-if="process.platform !== 'darwin'">
+              <input type="checkbox" v-model="macstyle">
+              <i></i>
+              <div>Use macOS style</div>
+            </label>
+            <label class="switch">
+              <input type="checkbox" v-model="acceleration">
+              <i></i>
+              <div>Enable hardware acceleration</div>
+            </label>
+            <label class="file">
+              <div>Select custom notification file:</div>
+              <input type="file" name="soundFile" ref="soundFile" style="display: none;" @change="notifSoundChanged" accept="audio/*">
+              <div class="fileBtn" @click.prevent="$refs.soundFile.click">
+                Browse ({{ this.notifSound.includes('wm-audio') ? 'Default' : this.notifSound.split('/').pop() }})
+              </div>
+              <div class="fileBtn" @click.prevent="notifSound = 'wm-audio://receivedText.mp3'" style="margin-left: 8px;">Reset</div>
+            </label>
+          </div>
         </div>
-        <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
-        <label class="switch">
-          <input type="checkbox" v-model="ssl">
-          <i></i>
-          <div>Enable SSL</div>
-        </label>
-        <hr>
-        <label class="switch">
-          <input type="checkbox" v-model="playsound">
-          <i></i>
-          <div>Custom notification sound</div>
-        </label>
-        <label class="switch">
-          <input type="checkbox" v-model="cacheMessages">
-          <i></i>
-          <div>Precache messages <span style="color: rgba(255,0,0,0.8);font-size: 12px;">More battery drain</span></div>
-        </label>
-        <label class="switch">
-          <input type="checkbox" v-model="startup">
-          <i></i>
-          <div>Launch on startup</div>
-        </label>
-        <label class="switch">
-          <input type="checkbox" v-model="minimize">
-          <i></i>
-          <div>Keep in tray</div>
-        </label>
-        <label class="switch" v-if="process.platform !== 'darwin'">
-          <input type="checkbox" v-model="macstyle">
-          <i></i>
-          <div>Use macOS style</div>
-        </label>
-        <label class="switch">
-          <input type="checkbox" v-model="acceleration">
-          <i></i>
-          <div>Enable hardware acceleration</div>
-        </label>
+        
         <a class="btn" v-on:click="saveModal">Save</a>
         <a v-on:click="closeModal" class="btn destructive">Cancel</a>
 
@@ -71,7 +92,8 @@ export default {
       ipAddress: '',
       port: 8180,
       ssl: false,
-      playsound: false,
+      subjectLine: false,
+      systemSound: false,
       launchOnStartup: false,
       minimize: true,
       macstyle: true,
@@ -83,7 +105,8 @@ export default {
       relayMessage: "Tunneling is currently disabled. Click the circle and ensure your device is attached to enable it.",
       relayColor: 'rgba(152,152,152,0.5)',
       enableTunnel: false,
-      cacheMessages: false
+      cacheMessages: false,
+      notifSound: 'wm-audio://receivedText.mp3'
     }
   },
   beforeDestroy () {
@@ -93,6 +116,14 @@ export default {
     }
   },
   methods: {
+    notifSoundChanged(e) {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0]
+        const path = 'local-file://'+file.path
+        
+        this.notifSound = path
+      }
+    },
     toggleTunnel () {
       this.enableTunnel = !this.enableTunnel
       this.$store.commit('setTunnel', this.enableTunnel)
@@ -154,12 +185,14 @@ export default {
       this.$store.commit('setFallbackIPAddress', this.ipAddress)
       this.$store.commit('setPort', this.port)
       this.$store.commit('setSSL', this.ssl)
-      this.$store.commit('setPlaySound', this.playsound)
+      this.$store.commit('setSubjectLine', this.subjectLine)
+      this.$store.commit('setSystemSound', this.systemSound)
       this.$store.commit('setStartup', this.startup)
       this.$store.commit('setMinimize', this.minimize)
       this.$store.commit('setMacStyle', this.macstyle)
       this.$store.commit('setAcceleration', this.acceleration)
       this.$store.commit('setCacheMessages', this.cacheMessages)
+      this.$store.commit('setNotifSound', this.notifSound)
       this.show = false
       if (this.enableTunnel) {
         this.initTunnel()
@@ -181,13 +214,15 @@ export default {
       this.ipAddress = this.$store.state.fallbackIpAddress != '' ? this.$store.state.fallbackIpAddress : this.ipAddress
       this.port = this.$store.state.port
       this.ssl = this.$store.state.ssl
-      this.playsound = this.$store.state.playsound
+      this.subjectLine = this.$store.state.subjectLine
+      this.systemSound = this.$store.state.systemSound
       this.startup = this.$store.state.startup
       this.minimize = this.$store.state.minimize
       this.macstyle = this.$store.state.macstyle
       this.acceleration = this.$store.state.acceleration
       this.enableTunnel = this.$store.state.enableTunnel
       this.cacheMessages = this.$store.state.cacheMessages
+      this.notifSound = this.$store.state.notifSound
       if (this.enableTunnel) {
         this.initTunnel()
       }
@@ -285,12 +320,30 @@ export default {
     position: relative;
     top: 50%;
     transform: translateY(-50%);
-    max-width: 300px;
+    max-width: 650px;
     margin: auto auto;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
     z-index: 2;
+
+    .settingsWrapper {
+      display: flex;
+      justify-content: space-around;
+
+      .settingsColumn {
+        display: flex;
+        flex: 1 1 0px;
+        flex-direction: column;
+        max-width: 300px;
+
+        h4 {
+          padding-left: 8px;
+          margin: 0;
+          margin-bottom: 10px;
+        }
+      }
+    }
 
     .textinput {
       width: auto;
@@ -363,6 +416,26 @@ export default {
     @media screen and (max-width: 992px) {
       width: 90%;
     }
+
+    input:not([type="range"]):not([type="file"]):not([type="color"]):not(.message-input) {
+      height: auto;
+      height: inherit;
+      font-size: 13px;
+      height: 6px;
+      padding: 10px 6px 10px 6px;
+      outline: none;
+      border: 1px solid rgb(213, 213, 213);
+      margin: 5px;
+      cursor: text;
+      -webkit-app-region: no-drag;
+    }
+
+    input:not([type="range"]):not([type="file"]):not([type="color"]):not(.message-input):focus {
+      border-radius: 1px;
+      box-shadow: 0px 0px 0px 3.5px rgba(23, 101, 144, 1);
+      animation: showFocus .3s;
+      border-color: rgb(122, 167, 221) !important;
+    }
   }
 
   &__close {
@@ -387,6 +460,31 @@ export default {
 
   &__footer {
     padding: 10px 20px 20px;
+  }
+}
+
+label.file {
+  text-align: left;
+  font-size: 15px;
+  margin-bottom: 10px;
+  margin-left: 8px;
+
+  .fileBtn {
+    background: #646462;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    width: fit-content;
+    cursor: pointer;
+    display: inline-block;
+    border: 2px solid rgba(0,0,0,0.6);
+    border-top: 0px;
+    border-left: 0px;
+    max-width: 215px;
+
+    &:hover {
+      filter: brightness(85%);
+    }
   }
 }
 
