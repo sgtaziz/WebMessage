@@ -49,12 +49,12 @@ export default {
   border-radius: 10px;
   padding: 10px 10px;
   color: lighten(#c2c2c2, 20%);
-  width: 135px;
+  max-width: 100%;
+  width: max-content;
   background-color: #3A3A3C;
   position: relative;
   overflow-wrap: break-word;
   display: inline-block;
-  margin-bottom: 3px;
 
   .feather {
     float: right;

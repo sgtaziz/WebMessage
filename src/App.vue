@@ -423,7 +423,7 @@ export default {
           }
         })
         notif.show()
-      } else if (reaction.sender != 1) {
+      } else if (reactions && reactions.length > 0 && reactions[0].sender != 1) {
         console.log('Notifications are not supported on this system.')
       }
     },

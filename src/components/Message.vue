@@ -86,7 +86,7 @@
           </div>
           <div class="msgTextboxWrapper">
             <input type="text" v-if="$store.state.subjectLine" class="subjectLine" ref="subjectLine" placeholder="Subject" @keyup.enter.exact="sendText" :class="{ noTopBorder: hasAttachments }">
-            <twemoji-textarea @contentChanged="autoResize" :placeholder="this.messages[0].type.replace('SMS', 'Text Message')"
+            <twemoji-textarea @contentChanged="autoResize" :placeholder="this.messages[0] ? this.messages[0].type.replace('SMS', 'Text Message') : 'Send a message'"
               :emojiData="emojiDataAll"
               :emojiGroups="emojiGroups"
               :initialContent="messageText[$route.params.id]"
@@ -99,7 +99,7 @@
           </div>
           <img src="@/assets/loading.webp" style="height:26px;float:right;" v-if="!canSend" />
           <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
-          <div class="sendBtn" :class="{ cantSend: !canSend }" @click="sendText">
+          <div class="sendBtn" :class="{ cantSend: !canSend, SMS: this.messages[0] && this.messages[0].type == 'SMS' }" @click="sendText">
             <feather type="arrow-up" size="20"></feather>
           </div>
         </div>
@@ -504,6 +504,9 @@ export default {
       } else if (/^\+\d{11,16}/gi.test(input)) {
         this.receiver = input
         this.hookPasteAndDrop()
+      } else if (/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(input)) {
+        this.receiver = input
+        this.hookPasteAndDrop()
       }
     },
     previewFiles () {
@@ -693,7 +696,7 @@ export default {
 .attachmentPreview {
   border: 1px solid #545454;
   margin-left: 32px;
-  margin-right: 64px;
+  margin-right: 58px;
   margin-bottom: -1px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
@@ -778,7 +781,7 @@ export default {
 
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
     margin-left: 32px;
-    width: calc(100% - 118px);
+    width: calc(100% - 112px);
     background: #1d1d1d !important;
     border: 1px solid #545454 !important;
     border-top-left-radius: 14px;
@@ -800,7 +803,7 @@ export default {
 
 #twemoji-textarea-outer {
   background-color: transparent !important;
-  width: calc(100% - 58px);
+  width: calc(100% - 52px);
   float: left;
 
   #twemoji-textarea {
@@ -983,8 +986,8 @@ export default {
   }
 
   .sendBtn {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: #2284FF;
     float: right;
@@ -992,7 +995,11 @@ export default {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    margin-right: 6px;
+    margin-right: 4px;
+
+    &.SMS {
+      background: #35CC5B;
+    }
 
     svg {
       stroke: rgb(255,255,255);
@@ -1032,8 +1039,8 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: calc(100% - 30px);
-    width: fit-content;
+    width: calc(100% - 30px);
+    // width: max-content;
     -webkit-app-region: no-drag;
   }
 }
@@ -1123,7 +1130,7 @@ export default {
   .attachment {
     // max-width: 75%;
     // max-height: 60vh;
-    width: auto;
+    width: 100%;
     height: auto;
     border-radius: 18px;
     padding-bottom: 1px;
@@ -1193,6 +1200,7 @@ export default {
     align-items: flex-start;
     flex-direction: column;
     margin-right: 25%;
+    width: 75%;
     max-width: 75%;
     margin-bottom: 1px;
   }
@@ -1251,11 +1259,17 @@ export default {
 .send {
   align-items: flex-end;
 
+  .attachment {
+    display: inline-flex;
+    justify-content: flex-end;
+  }
+
   .textWrapper {
     display: flex;
     align-items: flex-end;
     flex-direction: column;
     margin-left: 25%;
+    width: 75%;
     max-width: 75%;
     margin-bottom: 1px;
   }
