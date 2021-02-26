@@ -356,7 +356,7 @@ export default {
           
           const notification = {
             title: messageData.name,
-            body: messageData.text,
+            body: messageData.text.replace(/\u{fffc}/gu, ""),
             silent: !this.$store.state.systemSound
           }
 
@@ -366,6 +366,7 @@ export default {
 
           if (!this.$store.state.systemSound) this.notifSound.play()
           let notif = new remote.Notification(notification)
+          
           notif.on('click', (event, arg) => {
             if (chatData && chatData.id) {
               ipcRenderer.send('show_win')
