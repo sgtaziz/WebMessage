@@ -517,6 +517,7 @@ export default {
   width: auto;
   float: right;
   margin-right: 10px;
+  -webkit-app-region: no-drag;
 }
 
 .textinput {

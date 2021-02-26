@@ -1023,6 +1023,7 @@ export default {
     font-weight: 500;
     color: #7F7F7F;
     float: left;
+    -webkit-app-region: no-drag;
   }
 
   .contact {
@@ -1031,7 +1032,9 @@ export default {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    width: calc(100% - 30px);
+    max-width: calc(100% - 30px);
+    width: fit-content;
+    -webkit-app-region: no-drag;
   }
 }
 
@@ -1056,6 +1059,7 @@ export default {
       position: absolute;
       top: 16px;
       right: 8px;
+      -webkit-app-region: no-drag;
 
       .feather {
         cursor: pointer;
