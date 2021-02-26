@@ -398,6 +398,34 @@ export default {
         }
         this.chats.unshift(chatData)
       }
+      
+      if (reactions && reactions.length > 0 && reactions[0].sender != 1 && remote.Notification.isSupported()) {
+        let reaction = reactions[0]
+        if (this.$store.state.mutedChats.includes(reaction.personId)) return
+        
+        const notification = {
+          title: chatData.author,
+          body: chatData.text.replace(/\u{fffc}/gu, ""),
+          silent: !this.$store.state.systemSound
+        }
+
+        if (process.platform === 'win32') {
+          notification.icon = __static + '/icon.png'
+        }
+
+        if (!this.$store.state.systemSound) this.notifSound.play()
+        let notif = new remote.Notification(notification)
+        
+        notif.on('click', (event, arg) => {
+          if (chatData && chatData.id) {
+            ipcRenderer.send('show_win')
+            this.$router.push('/message/'+reaction.personId)
+          }
+        })
+        notif.show()
+      } else if (reaction.sender != 1) {
+        console.log('Notifications are not supported on this system.')
+      }
     },
     setAsRead (data) {
       if (this.$store.state.messagesCache[data.chatId]) {
