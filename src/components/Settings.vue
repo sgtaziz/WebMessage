@@ -62,7 +62,7 @@
               <div>Select custom notification file:</div>
               <input type="file" name="soundFile" ref="soundFile" style="display: none;" @change="notifSoundChanged" accept="audio/*">
               <div class="fileBtn" @click.prevent="$refs.soundFile.click">
-                Browse ({{ this.notifSound.includes('wm-audio') ? 'Default' : this.notifSound.split('/').pop() }})
+                Browse ({{ this.notifSound.includes('wm-audio') ? 'Default' : this.notifSound.split('/').pop().split('\\').pop() }})
               </div>
               <div class="fileBtn" @click.prevent="notifSound = 'wm-audio://receivedText.mp3'" style="margin-left: 8px;">Reset</div>
             </label>
