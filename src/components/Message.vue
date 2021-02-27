@@ -277,6 +277,7 @@ export default {
       this.reactingMessageGUID = null
       this.reactingMessageReactions = null
       this.reactingMessagePart = 0
+      this.subjectInput = ''
       if (this.$refs.uploadButton) {
         this.$refs.uploadButton.clear()
       }
@@ -494,6 +495,7 @@ export default {
       document.getElementById("twemoji-textarea").innerHTML = ""
       this.messageText[this.$route.params.id] = ""
       if (this.$refs.subjectLine) this.$refs.subjectLine.value = ""
+      this.subjectInput = ''
 
       axios.post(this.$store.getters.httpURI+'/sendText', textObj)
         .then(response => {
@@ -883,7 +885,7 @@ export default {
     padding-right: 10px !important;
     background: rgba(29,29,29, 1) !important;
     border: 1px solid #545454 !important;
-    line-height: 21px !important;
+    line-height: 18px !important;
     font-size: 13px !important;
     margin-left: 6px !important;
     margin-right: 6px !important;
@@ -1376,6 +1378,7 @@ export default {
 
   .receipt {
     margin-top: 4px;
+    margin-bottom: 4px;
     margin-right: -2px;
     color: #999999;
     font-size: 11px;

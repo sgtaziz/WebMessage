@@ -81,7 +81,8 @@ export default {
       maximized: false,
       maximizing: false,
       win: null,
-      status: 0 // 0 for disconnected, 1 for connecting, 2 for connected
+      status: 0, // 0 for disconnected, 1 for connecting, 2 for connected,
+      lastNotificationGUID: ''
     }
   },
   computed: {
@@ -353,10 +354,12 @@ export default {
 
         if (messageData.sender != 1 && remote.Notification.isSupported()) {
           if (this.$store.state.mutedChats.includes(messageData.personId)) return
+          if (this.lastNotificationGUID == messageData.guid) return
           let body = messageData.text.replace(/\u{fffc}/gu, "")
           if (messageData.group && messageData.group.startsWith('chat')) {
             body = `${messageData.author}: ${body}`
           }
+          this.lastNotificationGUID = messageData.guid
           
           const notification = {
             title: messageData.name,
@@ -406,6 +409,8 @@ export default {
       if (reactions && reactions.length > 0 && reactions[0].sender != 1 && remote.Notification.isSupported()) {
         let reaction = reactions[0]
         if (this.$store.state.mutedChats.includes(reaction.personId)) return
+        if (this.lastNotificationGUID == messageData.guid) return
+        this.lastNotificationGUID = messageData.guid
         
         const notification = {
           title: chatData.author,
