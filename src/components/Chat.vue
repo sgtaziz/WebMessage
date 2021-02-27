@@ -1,5 +1,5 @@
 <template>
-  <div class="chatContainer" :class="this.$route.path == '/message/'+this.chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate">
+  <div class="chatContainer" :class="$route.path == '/message/'+chatid ? 'active' : ''" :id="'id'+chatid" @click="navigate">
     <div class="chatWrapper" @mousedown="dragMouseDown" :style="{ left: '-'+slideX+'px' }">
       <div class="unread" :style="read ? 'background-color: transparent;' : ''"></div>
       <div class="avatarContainer">
@@ -10,12 +10,13 @@
         <div class="title">
           <span class="author">
             <span class="name" v-html="$options.filters.twemoji(author)"></span>
-            <span v-if="showNum" class="number"> ({{ this.chatid }})</span>
+            <span v-if="showNum" class="number"> ({{ chatid }})</span>
             <feather type="bell-off" stroke="rgb(85,85,85)" size="13" v-if="$store.state.mutedChats.includes(chatid)"></feather>
           </span>
           <span class="date">{{ date/1000 | moment }}</span>
         </div>
-        <div class="text">
+        <typing-indicator v-if="$store.state.isTyping[chatid]"></typing-indicator>
+        <div class="text" v-else>
           <span v-html="trimmedText"></span>
         </div>
       </div>
@@ -29,8 +30,10 @@
 
 <script>
 import moment from 'moment'
+import TypingIndicator from './TypingIndicator.vue'
 
 export default {
+  components: { TypingIndicator },
   name: 'Chat',
   props: {
     chatid: { type: String },

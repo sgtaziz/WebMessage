@@ -73,6 +73,12 @@
               </template>
             </div>
           </div>
+
+          <div class="messageGroup receive last" v-if="$store.state.isTyping[$route.params.id]">
+              <div class="textWrapper">
+                <typing-indicator></typing-indicator>
+              </div>
+          </div>
         </simplebar>
 
         <div class="textboxContainer">
@@ -85,7 +91,7 @@
             </div>
           </div>
           <div class="msgTextboxWrapper">
-            <input type="text" v-if="$store.state.subjectLine" class="subjectLine" ref="subjectLine" placeholder="Subject" @keyup.enter.exact="sendText" :class="{ noTopBorder: hasAttachments }">
+            <input type="text" v-model="subjectInput" v-if="$store.state.subjectLine" class="subjectLine" ref="subjectLine" placeholder="Subject" @keyup.enter.exact="sendText" :class="{ noTopBorder: hasAttachments }">
             <twemoji-textarea @contentChanged="autoResize" :placeholder="this.messages[0] ? this.messages[0].type.replace('SMS', 'Text Message') : 'Send a message'"
               :emojiData="emojiDataAll"
               :emojiGroups="emojiGroups"
@@ -99,7 +105,7 @@
           </div>
           <img src="@/assets/loading.webp" style="height:26px;float:right;" v-if="!canSend" />
           <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
-          <div class="sendBtn" :class="{ cantSend: !canSend, SMS: this.messages[0] && this.messages[0].type == 'SMS' }" @click="sendText">
+          <div class="sendBtn" :class="{ cantSend: !canSend || !hasDataToSend, SMS: this.messages[0] && this.messages[0].type == 'SMS' }" @click="sendText">
             <feather type="arrow-up" size="20"></feather>
           </div>
         </div>
@@ -126,6 +132,7 @@ import ReactionMenu from './ReactionMenu'
 import Reactions from './Reactions'
 import axios from 'axios'
 import { parseBuffer } from 'bplist-parser'
+import TypingIndicator from './TypingIndicator.vue'
 
 export default {
   name: 'Message',
@@ -138,12 +145,13 @@ export default {
     DownloadAttachment,
     UploadButton,
     ReactionMenu,
-    Reactions
+    Reactions,
+    TypingIndicator
   },
   data: function () {
     return {
       messages: [],
-      messageText: [],
+      messageText: {},
       limit: 25,
       offset: 0,
       receiver: '',
@@ -157,7 +165,8 @@ export default {
       reactingMessage: null,
       reactingMessageGUID: null,
       reactingMessageReactions: null,
-      reactingMessagePart: 0
+      reactingMessagePart: 0,
+      subjectInput: ''
     }
   },
   computed: {
@@ -173,10 +182,17 @@ export default {
       })
       return groups
     },
+    hasDataToSend() {
+      let messageText = this.messageText[this.$route.params.id] ? this.messageText[this.$route.params.id] : ''
+      let subjectText = this.subjectInput
+
+      return messageText != '' || subjectText != '' || this.hasAttachments
+    },
     sortedMessages() {
       // let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
       let messages = this.messages
       let lastSentMessageFound = false
+      let lastReadMessageFound = false
 
       const groupDates = (date1, date2) => (date2 - date1 < 3600000)
       const groupAuthor = (author1, author2) => (author1 == author2)
@@ -207,12 +223,40 @@ export default {
           }
         }
 
-        if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date))
-            r[r.length - 1].texts.unshift({ text: text, subject: subject, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras })
-        else
-          r.push({ ...rest, texts: [{ text: text, subject: subject, date: rest.date, attachments: rest.attachments, read: dateRead, delivered: dateDelivered, guid: guid, reactions: reactions, showStamp: rest.sender == 1 && !lastSentMessageFound, ...extras }] })
+        if (prev && groupAuthor(rest.author, prev.author) && groupAuthor(rest.sender, prev.sender) && groupDates(rest.date, prev.date)) {
+          r[r.length - 1].texts.unshift({
+            text: text,
+            subject: subject,
+            date: rest.date,
+            attachments: rest.attachments,
+            read: dateRead,
+            delivered: dateDelivered,
+            guid: guid,
+            reactions:
+            reactions,
+            showStamp: rest.sender == 1 && (!lastSentMessageFound || (!lastReadMessageFound && dateRead > 0)),
+            ...extras
+          })
+        } else {
+          r.push({
+            ...rest,
+            texts: [{
+              text: text,
+              subject: subject,
+              date: rest.date,
+              attachments: rest.attachments,
+              read: dateRead,
+              delivered: dateDelivered,
+              guid: guid,
+              reactions: reactions,
+              showStamp: rest.sender == 1 && (!lastSentMessageFound || (!lastReadMessageFound && dateRead > 0)),
+              ...extras
+            }]
+          })
+        }
 
         if (rest.sender == 1 && !lastSentMessageFound) lastSentMessageFound = true
+        if (rest.sender == 1 && (!lastReadMessageFound && dateRead > 0)) lastReadMessageFound = true
         
         return r
       }, [])
@@ -397,12 +441,9 @@ export default {
     autoResize (value) {
       var el = document.getElementById('twemoji-textarea')
 
-      // if (!this.canSend) {
-      //   el.innerHTML = this.messageText[this.$route.params.id]
-      //   return
-      // }
-
-      if (value) this.messageText[this.$route.params.id] = value
+      if (value !== false) {
+        this.$set(this.messageText, this.$route.params.id, value)
+      }
 
       this.$nextTick(() => {
         let scrollHeight = el.scrollHeight
@@ -432,7 +473,7 @@ export default {
     sendText () {
       if (!this.canSend) return
 
-      let messageText = this.messageText[this.$route.params.id]
+      let messageText = this.messageText[this.$route.params.id] ? this.messageText[this.$route.params.id] : ''
       let subjectText = this.$refs.subjectLine ? this.$refs.subjectLine.value : ''
 
       if (messageText == '' && subjectText != '') {
@@ -461,17 +502,19 @@ export default {
           }
 
           this.canSend = true
-          this.autoResize('')
+          this.autoResize(false)
         })
         .catch(error => {
           alert("There was an error while sending your text.\n" + error)
           this.canSend = true
+          this.autoResize(false)
         })
     },
-    scrollToBottom () {
+    scrollToBottom (force) {
       if (this.$refs.messages) {
         let container = this.$refs.messages.SimpleBar.getScrollElement()
         let scrollTo = this.lastHeight ? (container.scrollHeight - this.lastHeight) : container.scrollHeight
+        if (force && this.offset <= 25) scrollTo = container.scrollHeight
 
         container.scrollTop = scrollTo
 
@@ -510,8 +553,8 @@ export default {
       }
     },
     previewFiles () {
-      this.hasAttachments = this.$refs.uploadButton.attachments != null
-      this.autoResize()
+      this.hasAttachments = this.$refs.uploadButton && this.$refs.uploadButton.attachments != null
+      this.autoResize(false)
     },
     removeAttachment (i) {
       if (!this.canSend) return
@@ -613,11 +656,18 @@ export default {
         if (messageIndex > -1) {
           this.messages[messageIndex]['dateRead'] = data.read
           this.messages[messageIndex]['dateDelivered'] = data.delivered
+          this.$set(this.messages, messageIndex, this.messages[messageIndex]) // Reactivity in Vue is weird
+          
           if (this.lastHeight == null) {
             this.$nextTick(() => { this.scrollToBottom() })
           }
-          this.messages.__ob__.dep.notify()
         }
+      }
+    },
+    setTypingIndicator (data) {
+      if (data && data.chat_id == this.$route.params.id && this.lastHeight == null) {
+        this.$nextTick(this.scrollToBottom)
+        setTimeout(this.scrollToBottom, 10)
       }
     },
     newMessage (data) {
@@ -638,10 +688,11 @@ export default {
         if (this.messages && this.messages.length > 0 && message[0]['personId'] == this.$route.params.id) {
           let oldMsgIndex = this.messages.findIndex(obj => obj.guid == message[0].guid)
           if (oldMsgIndex != -1) {
-            this.messages[oldMsgIndex] = message[0]
+            this.$set(this.messages, oldMsgIndex, message[0]) 
             return
           }
 
+          if (message[0].sender != 1) this.$store.commit('setTyping', { chatId: this.$route.params.id, isTyping: false })
           this.messages.unshift(message[0])
 
           if (this.lastHeight == null) {
@@ -661,7 +712,8 @@ export default {
         let msgIndex = this.messages.findIndex(obj => obj.guid == reactions[0].forGUID)
         if (msgIndex > -1) {
           this.messages[msgIndex].reactions = reactions
-          this.messages.__ob__.dep.notify()
+          this.$set(this.messages[msgIndex], 'reactions', reactions)
+          
           let intervalTime = 0
           this.$nextTick(() => {
             if (this.lastHeight == null) {
@@ -793,6 +845,10 @@ export default {
     line-height: 20px;
     font-weight: 500;
     letter-spacing: 0.25px;
+
+    &::placeholder {
+      color: lighten(#7E7E7E, 25%);
+    }
 
     &.noTopBorder {
       border-top-left-radius: 0px;
@@ -1130,7 +1186,8 @@ export default {
   .attachment {
     // max-width: 75%;
     // max-height: 60vh;
-    width: 100%;
+    width: max-content;
+    max-width: 100%;
     height: auto;
     border-radius: 18px;
     padding-bottom: 1px;
@@ -1142,7 +1199,7 @@ export default {
       // max-height: 700px;
       border-radius: 18px;
       border-radius: 12px;
-      max-height: 60vh;
+      max-height: 33vh;
       max-width: 100%;
       width: auto;
       height: auto;
@@ -1153,7 +1210,7 @@ export default {
       // max-width: 420px;
       // max-height: 700px;
       border-radius: 12px;
-      max-height: 60vh;
+      max-height: 33vh;
       max-width: 100%;
       width: auto;
       height: auto;
@@ -1200,7 +1257,6 @@ export default {
     align-items: flex-start;
     flex-direction: column;
     margin-right: 25%;
-    width: 75%;
     max-width: 75%;
     margin-bottom: 1px;
   }
@@ -1259,17 +1315,11 @@ export default {
 .send {
   align-items: flex-end;
 
-  .attachment {
-    display: inline-flex;
-    justify-content: flex-end;
-  }
-
   .textWrapper {
     display: flex;
     align-items: flex-end;
     flex-direction: column;
     margin-left: 25%;
-    width: 75%;
     max-width: 75%;
     margin-bottom: 1px;
   }

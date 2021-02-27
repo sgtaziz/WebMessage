@@ -25,7 +25,9 @@ export default new Vuex.Store({
     enableTunnel: persistentStore.get('enableTunnel', false),
     cacheMessages: persistentStore.get('cacheMessages', false),
     mutedChats: persistentStore.get('mutedChats', []),
-    notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3')
+    notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3'),
+    isTyping: {},
+    isTypingTimer: {}
   },
   mutations: {
     setPassword(state, password) {
@@ -105,6 +107,15 @@ export default new Vuex.Store({
     },
     resetMessages(state) {
       state['messagesCache'] = []
+    },
+    setTyping(state, data) {
+      Vue.set(state['isTyping'], data.chatId, data.isTyping)
+
+      if (state['isTypingTimer'][data.chatId]) clearTimeout(state['isTypingTimer'][data.chatId])
+
+      state['isTypingTimer'][data.chatId] = setTimeout(() => {
+        Vue.set(state['isTyping'], data.chatId, false)
+      }, 60000)
     }
   },
   getters: {

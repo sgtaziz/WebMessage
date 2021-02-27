@@ -345,7 +345,7 @@ export default {
         if (this.$store.state.messagesCache[messageData.personId]) {
           let oldMsgIndex = this.$store.state.messagesCache[messageData.personId].findIndex(obj => obj.guid == messageData.guid)
           if (oldMsgIndex != -1) {
-            this.$store.state.messagesCache[messageData.personId][oldMsgIndex] = messageData
+            this.$set(this.$store.state.messagesCache[messageData.personId], oldMsgIndex, messageData)
             return
           }
           this.$store.state.messagesCache[messageData.personId].unshift(messageData)
@@ -353,10 +353,14 @@ export default {
 
         if (messageData.sender != 1 && remote.Notification.isSupported()) {
           if (this.$store.state.mutedChats.includes(messageData.personId)) return
+          let body = messageData.text.replace(/\u{fffc}/gu, "")
+          if (messageData.group && messageData.group.startsWith('chat')) {
+            body = `${messageData.author}: ${body}`
+          }
           
           const notification = {
             title: messageData.name,
-            body: messageData.text.replace(/\u{fffc}/gu, ""),
+            body: body,
             silent: !this.$store.state.systemSound
           }
 
@@ -384,7 +388,7 @@ export default {
       if (reactions && reactions.length > 0 && this.$store.state.messagesCache[reactions[0].personId]) {
         let msgIndex = this.$store.state.messagesCache[reactions[0].personId].findIndex(obj => obj.guid == reactions[0].forGUID)
         if (msgIndex > -1) {
-          this.$store.state.messagesCache[reactions[0].personId][msgIndex].reactions = reactions
+          this.$set(this.$store.state.messagesCache[reactions[0].personId][msgIndex], 'reactions', reactions)
         }
       }
 
@@ -434,6 +438,14 @@ export default {
           this.$store.state.messagesCache[data.chatId][messageIndex]['dateRead'] = data.read
           this.$store.state.messagesCache[data.chatId][messageIndex]['dateDelivered'] = data.delivered
         }
+      }
+    },
+    setTypingIndicator (data) {
+      if (data && data.chat_id) {
+        let chatId = data.chat_id
+        let typing = (data.typing == true)
+
+        if (chatId) this.$store.commit('setTyping', { chatId: chatId, isTyping: typing })
       }
     },
     removeChat (data) {

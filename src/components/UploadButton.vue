@@ -41,8 +41,8 @@ export default {
     if (!this.enableiMessageAttachments) {
       // SMS limitations recommend a max payload size of 300kB.
       // This can vary between carriers, but there is no way to
-      // detect it. So, recommended value it is.
-      this.sizeLimit = 0.3
+      // detect it. So, recommended value it is. But 20MB works so..
+      this.sizeLimit = 20
     }
   },
   methods: {
