@@ -50,11 +50,10 @@ export default {
   padding: 10px 10px;
   color: lighten(#c2c2c2, 20%);
   max-width: 100%;
-  width: max-content;
+  width: auto;
   background-color: #3A3A3C;
   position: relative;
   overflow-wrap: break-word;
-  display: inline-block;
 
   .feather {
     float: right;

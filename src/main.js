@@ -16,7 +16,11 @@ import { longClickDirective } from 'vue-long-click'
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faHeart, faThumbsUp, faThumbsDown, faLaughSquint, faExclamation, faQuestion } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+import { VLazyImagePlugin } from "v-lazy-image"
+
 window.$ = $
+window.jQuery = $
+require('imagesloaded')
 
 const https = require('https')
 
@@ -32,6 +36,7 @@ Vue.use(VueNativeSock, 'ws://', {
 Vue.use(VueFeather)
 Vue.use(Popover, { tooltip: true })
 Vue.use(VueConfirmDialog)
+Vue.use(VLazyImagePlugin)
 
 library.add(faHeart)
 library.add(faThumbsUp)

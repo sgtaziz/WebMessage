@@ -1,5 +1,5 @@
 <template>
-  <div class="expandable-image" :class="{ expanded: expanded, nostyle: $store.state.macstyle }">
+  <div class="expandable-image" :class="{ expanded: expanded, nostyle: $store.state.macstyle }" ref="this">
     <template v-if="loadedImage">
       <i v-if="!expanded" class="expand-button" @click="expanded = true">
         <feather type="maximize-2" stroke="#fff" size="24"></feather>
@@ -8,7 +8,7 @@
         <feather type="download" stroke="#fff" size="24"></feather>
       </i>
     </template>
-    <img crossorigin="anonymous" ref="image" :src="url" @load="handleLoad" :download="path.split('/').pop()"/>
+    <v-lazy-image crossorigin="anonymous" :src="url" @load="handleLoad" :download="path.split('/').pop()"/>
   </div>
 </template>
 
@@ -22,14 +22,16 @@ export default {
   data () {
     return {
       expanded: false,
-      loadedImage: false,
-      base64URL: null
+      loadedImage: false
     }
   },
   computed: {
     url() {
       return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(this.type)}&auth=${encodeURIComponent(this.$store.state.password)}`
     }
+  },
+  mounted () {
+    
   },
   methods: {
     closeImage (event) {
@@ -47,26 +49,16 @@ export default {
       let a = document.createElement('a')
       document.body.appendChild(a)
       a.download = this.path.split('/').pop()
-      a.href = this.base64URL
+      a.href = this.url
       a.click()
       a.remove()
     },
     handleLoad () {
-      this.$nextTick(this.loadedData)
-
-      let canvas = document.createElement('canvas')
-      let context = canvas.getContext('2d')
-      let image = this.$refs.image
-
-      if (image) {
-        canvas.height = image.naturalHeight
-        canvas.width = image.naturalWidth
-        context.drawImage(image, 0, 0)
-
-        this.base64URL = canvas.toDataURL()
-      }
-
-      this.loadedImage = true
+      this.$nextTick(() => this.loadedData(true))
+      $(this.$refs.this).imagesLoaded().done(() => {
+        this.$nextTick(() => this.loadedData(true))
+        this.loadedImage = true
+      })
     }
   },
   watch: {
