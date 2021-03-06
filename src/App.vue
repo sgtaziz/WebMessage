@@ -25,6 +25,9 @@
           <feather type="settings" stroke="rgba(152,152,152,0.5)" size="20" @click="$refs.settingsModal.openModal()"></feather>
         </div>
         <div class="menuBtn">
+          <feather type="refresh-cw" stroke="rgba(152,152,152,0.5)" size="19" @click="connectWS"></feather>
+        </div>
+        <div class="menuBtn">
           <feather type="edit" stroke="rgba(36,132,255,0.65)" size="20" @click="composeMessage"></feather>
         </div>
         <div class="menuBtn" v-if="updateAvailable">
@@ -43,6 +46,7 @@
           :read="chat.read"
           :docid="chat.docid"
           :showNum="chat.showNum"
+          :isGroup="chat.personId.startsWith('chat') && !chat.personId.includes('@') && chat.personId.length >= 20"
           @deleted="deleteChat(chat)">
         </chat>
       </simplebar>
@@ -129,6 +133,7 @@ export default {
   methods: {
     markAsRead (val) {
       let chatIndex = this.chats.findIndex(obj => obj.personId == val)
+      
       if (chatIndex > -1) {
         let chat = this.chats[chatIndex]
 
@@ -265,6 +270,13 @@ export default {
       }
     })
 
+    $(document).mousedown(event => {
+      if (event.which == 3) {
+        //this is a right click, so electron-context-menu will be appearing momentarily... 
+        ipcRenderer.send('rightClickMessage', null)
+      }
+    })
+
     ipcRenderer.send('loaded')
 
     ipcRenderer.on('update_available', () => {
@@ -363,7 +375,7 @@ export default {
           
           const notification = {
             title: messageData.name,
-            body: body,
+            body: body == '' ? 'Attachment' : body,
             silent: !this.$store.state.systemSound
           }
 
@@ -409,8 +421,8 @@ export default {
       if (reactions && reactions.length > 0 && reactions[0].sender != 1 && remote.Notification.isSupported()) {
         let reaction = reactions[0]
         if (this.$store.state.mutedChats.includes(reaction.personId)) return
-        if (this.lastNotificationGUID == messageData.guid) return
-        this.lastNotificationGUID = messageData.guid
+        if (this.lastNotificationGUID == reaction.guid) return
+        this.lastNotificationGUID = reaction.guid
         
         const notification = {
           title: chatData.author,

@@ -19,6 +19,7 @@ const autoLauncher = new AutoLaunch({
 let tray = null
 let win = null
 let startMinimized = (process.argv || []).indexOf('--hidden') !== -1;
+let rightClickedMessage = null
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -27,6 +28,13 @@ protocol.registerSchemesAsPrivileged([
 
 contextMenu({
 	prepend: (defaultActions, params, browserWindow) => [
+    {
+      label: "Tapback",
+      visible: rightClickedMessage !== null,
+      click() {
+        win.webContents.send('reactToMessage', rightClickedMessage)
+      }
+    }
 	]
 })
 
@@ -49,7 +57,8 @@ async function createWindow() {
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js'),
       enableRemoteModule: true,
-      devTools: isDevelopment && !process.env.IS_TEST
+      devTools: isDevelopment && !process.env.IS_TEST,
+      spellcheck: true
     },
     icon: path.join(__static, 'icon.png'),
     title: 'WebMessage'
@@ -103,6 +112,19 @@ async function createWindow() {
   }
 
   win.webContents.send('win_id', win.id)
+
+  win.webContents.session.on('will-download', (event, item, webContents) => {
+    item.on('updated', (event, state) => {
+      if (state === 'interrupted') {
+        console.log('Download is interrupted but can be resumed')
+      } else if (state === 'progressing') {
+        win.setProgressBar(item.getReceivedBytes()/item.getTotalBytes())
+      }
+    })
+    item.once('done', (event, state) => {
+      win.setProgressBar(-1)
+    })
+  })
 }
 
 async function loadURL () {
@@ -189,6 +211,10 @@ ipcMain.on('loaded', (event) => {
   autoUpdater.checkForUpdatesAndNotify()
   win.webContents.send('win_id', win.id)
   registerShortcuts()
+})
+
+ipcMain.on('rightClickMessage', (event, args) => {
+  rightClickedMessage = args
 })
 
 ipcMain.on('app_version', (event) => {

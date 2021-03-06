@@ -29,9 +29,10 @@ export default {
   padding: 10px;
   display: table;
   margin: 0 auto;
+  margin-top: 1px;
   position: relative;
   animation: 2s bulge infinite ease-out;
-  margin-bottom: 5px;
+  margin-bottom: 7px;
   margin-left: 0;
 
   &::before,
@@ -39,7 +40,7 @@ export default {
     content: '';
     position: absolute;
     bottom: -2px;
-    left: -2px;
+    left: -1px;
     height: 10px;
     width: 10px;
     border-radius: 50%;
@@ -48,8 +49,8 @@ export default {
   &::after {
     height: 5px;
     width: 5px;
-    left: -5px;
-    bottom: -5px;
+    left: -4.5px;
+    bottom: -6px;
   }
   span {
     height: 7px;

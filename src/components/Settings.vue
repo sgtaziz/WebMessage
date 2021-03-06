@@ -6,67 +6,74 @@
 
       <div class="modal__dialog">
         <h3>Settings</h3>
+          <div class="selectors">
+            <div class="selector" :class="{ active: activeView == 'tweak'}" @click="activeView = 'tweak'">Tweak</div>
+            <div class="selector" :class="{ active: activeView == 'client'}" @click="activeView = 'client'">Client</div>
+          </div>
           <div class="settingsWrapper">
-          <div class="settingsColumn">
-            <h4>Tweak</h4>
-            <input type="password" placeholder="Password" class="textinput" v-model="password" />
-            <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" :disabled="this.enableTunnel"/>
-            <div class="tunnelToggle">
-              <feather type="circle" size="20" @click="toggleTunnel" :fill="relayColor" v-popover:tunnel.bottom></feather>
-            </div>
-            <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
-            <label class="switch">
-              <input type="checkbox" v-model="ssl">
-              <i></i>
-              <div>Enable SSL</div>
-            </label>
-          </div>
-          <div class="settingsColumn">
-            <h4>Client</h4>
-            <label class="switch">
-              <input type="checkbox" v-model="subjectLine">
-              <i></i>
-              <div>Enable subject line</div>
-            </label>
-            <label class="switch">
-              <input type="checkbox" v-model="systemSound">
-              <i></i>
-              <div>Use system notification sound</div>
-            </label>
-            <label class="switch">
-              <input type="checkbox" v-model="cacheMessages">
-              <i></i>
-              <div>Precache messages <span style="color: rgba(255,0,0,0.8);font-size: 12px;">More battery drain</span></div>
-            </label>
-            <label class="switch">
-              <input type="checkbox" v-model="startup">
-              <i></i>
-              <div>Launch on startup</div>
-            </label>
-            <label class="switch">
-              <input type="checkbox" v-model="minimize">
-              <i></i>
-              <div>Keep in tray</div>
-            </label>
-            <label class="switch" v-if="process.platform !== 'darwin'">
-              <input type="checkbox" v-model="macstyle">
-              <i></i>
-              <div>Use macOS style</div>
-            </label>
-            <label class="switch">
-              <input type="checkbox" v-model="acceleration">
-              <i></i>
-              <div>Enable hardware acceleration</div>
-            </label>
-            <label class="file">
-              <div>Select custom notification file:</div>
-              <input type="file" name="soundFile" ref="soundFile" style="display: none;" @change="notifSoundChanged" accept="audio/*">
-              <div class="fileBtn" @click.prevent="$refs.soundFile.click">
-                Browse ({{ this.notifSound.includes('wm-audio') ? 'Default' : this.notifSound.split('/').pop().split('\\').pop() }})
+            <div class="settingsColumn" v-if="activeView == 'tweak'">
+              <input type="password" placeholder="Password" class="textinput" v-model="password" />
+              <input type="text" placeholder="IP Address" class="textinput" v-model="ipAddress" :disabled="this.enableTunnel"/>
+              <div class="tunnelToggle">
+                <feather type="circle" size="20" @click="toggleTunnel" :fill="relayColor" v-popover:tunnel.bottom></feather>
               </div>
-              <div class="fileBtn" @click.prevent="notifSound = 'wm-audio://receivedText.mp3'" style="margin-left: 8px;">Reset</div>
-            </label>
-          </div>
+              <input ref="portField" type="number" placeholder="Port" class="textinput" min="1" max="65535" @keyup="enforceConstraints" v-model="port" />
+              <label class="switch">
+                <input type="checkbox" v-model="ssl">
+                <i></i>
+                <div>Enable SSL</div>
+              </label>
+            </div>
+            <div class="settingsColumn" v-if="activeView == 'client'">
+              <label class="switch">
+                <input type="checkbox" v-model="subjectLine">
+                <i></i>
+                <div>Enable subject line</div>
+              </label>
+              <label class="switch">
+                <input type="checkbox" v-model="transcode">
+                <i></i>
+                <div>Convert Apple formats <span style="font-size: 12px;">(mov, heic, caf)</span></div>
+              </label>
+              <label class="switch">
+                <input type="checkbox" v-model="systemSound">
+                <i></i>
+                <div>Use system notification sound</div>
+              </label>
+              <label class="switch">
+                <input type="checkbox" v-model="cacheMessages">
+                <i></i>
+                <div>Precache messages <span style="color: rgba(255,0,0,0.8);font-size: 12px;">More battery drain</span></div>
+              </label>
+              <label class="switch">
+                <input type="checkbox" v-model="startup">
+                <i></i>
+                <div>Launch on startup</div>
+              </label>
+              <label class="switch">
+                <input type="checkbox" v-model="minimize">
+                <i></i>
+                <div>Keep in tray</div>
+              </label>
+              <label class="switch" v-if="process.platform !== 'darwin'">
+                <input type="checkbox" v-model="macstyle">
+                <i></i>
+                <div>Use macOS style</div>
+              </label>
+              <label class="switch">
+                <input type="checkbox" v-model="acceleration">
+                <i></i>
+                <div>Enable hardware acceleration</div>
+              </label>
+              <label class="file">
+                <div>Select custom notification file:</div>
+                <input type="file" name="soundFile" ref="soundFile" style="display: none;" @change="notifSoundChanged" accept="audio/*">
+                <div class="fileBtn" @click.prevent="$refs.soundFile.click">
+                  Browse ({{ this.notifSound.includes('wm-audio') ? 'Default' : this.notifSound.split('/').pop().split('\\').pop() }})
+                </div>
+                <div class="fileBtn" @click.prevent="notifSound = 'wm-audio://receivedText.mp3'" style="margin-left: 8px;">Reset</div>
+              </label>
+            </div>
         </div>
         
         <a class="btn" v-on:click="saveModal">Save</a>
@@ -93,6 +100,7 @@ export default {
       port: 8180,
       ssl: false,
       subjectLine: false,
+      transcode: true,
       systemSound: false,
       launchOnStartup: false,
       minimize: true,
@@ -106,7 +114,8 @@ export default {
       relayColor: 'rgba(152,152,152,0.5)',
       enableTunnel: false,
       cacheMessages: false,
-      notifSound: 'wm-audio://receivedText.mp3'
+      notifSound: 'wm-audio://receivedText.mp3',
+      activeView: 'tweak'
     }
   },
   beforeDestroy () {
@@ -186,6 +195,7 @@ export default {
       this.$store.commit('setPort', this.port)
       this.$store.commit('setSSL', this.ssl)
       this.$store.commit('setSubjectLine', this.subjectLine)
+      this.$store.commit('setTranscode', this.transcode)
       this.$store.commit('setSystemSound', this.systemSound)
       this.$store.commit('setStartup', this.startup)
       this.$store.commit('setMinimize', this.minimize)
@@ -208,6 +218,7 @@ export default {
     },
     openModal() {
       this.show = true
+      this.activeView = 'tweak'
     },
     loadValues() {
       this.password = this.$store.state.password
@@ -215,6 +226,7 @@ export default {
       this.port = this.$store.state.port
       this.ssl = this.$store.state.ssl
       this.subjectLine = this.$store.state.subjectLine
+      this.transcode = this.$store.state.transcode
       this.systemSound = this.$store.state.systemSound
       this.startup = this.$store.state.startup
       this.minimize = this.$store.state.minimize
@@ -320,12 +332,38 @@ export default {
     position: relative;
     top: 50%;
     transform: translateY(-50%);
-    max-width: 650px;
+    max-width: 300px;
     margin: auto auto;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
     z-index: 2;
+
+    .selectors {
+      font-weight: 400;
+      color: rgb(200,200,200);
+      
+      .selector {
+        display: inline-block;
+        margin-right: 10px;
+        margin-bottom: 20px;
+        cursor: pointer;
+
+      &:last-of-type {
+        margin-right: 0px;
+      }
+
+        &:hover {
+          color: white;
+        }
+
+        &.active {
+          font-weight: 500;
+          text-decoration: underline;
+          color: white;
+        }
+      }
+    }
 
     .settingsWrapper {
       display: flex;

@@ -22,11 +22,13 @@ export default {
     targetFromMe: { type: Boolean },
     target: { type: String },
     part: { type: Number },
-    click: { type: Function }
+    click: { type: Function },
+    balloon: { type: Boolean, default: false },
   },
   computed: {
     reactionList() {
-      let reactions = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.forPart == this.part)
+      if (!this.reactions) return []
+      let reactions = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.forPart == (this.balloon ? 'b' : this.part))
       
       let reactionFromMe = null
       reactions.forEach((reaction) => {

@@ -16,6 +16,7 @@ export default new Vuex.Store({
     port: persistentStore.get('port', 8180),
     ssl: persistentStore.get('ssl', true),
     subjectLine: persistentStore.get('subjectLine', false),
+    transcode: persistentStore.get('transcode', true),
     systemSound: persistentStore.get('systemSound', false),
     startup: persistentStore.get('startup', false),
     minimize: persistentStore.get('minimize', true),
@@ -54,6 +55,10 @@ export default new Vuex.Store({
     setSubjectLine(state, subjectLine) {
       state['subjectLine'] = subjectLine
       persistentStore.set('subjectLine', subjectLine)
+    },
+    setTranscode(state, transcode) {
+      state['transcode'] = transcode
+      persistentStore.set('transcode', transcode)
     },
     setSystemSound(state, systemSound) {
       state['systemSound'] = systemSound

@@ -34,7 +34,8 @@ export default {
     target: { type: Object },
     guid: { type: String },
     part: { type: Number },
-    reactions: { type: Array }
+    reactions: { type: Array },
+    balloon: { type: Boolean, default: false }
   },
   watch: {
     target(newTarget) {
@@ -53,7 +54,7 @@ export default {
       if (newTarget == null) return
 
       let target = newTarget.children().last()
-      let parent = newTarget.parent().parent()
+      let parent = newTarget.parent().parent().parent()
       let p = target.offset()
       let w = target.width()
       let h = target.height()
@@ -93,7 +94,7 @@ export default {
         this.position.left = (p.left - 15) + 'px'
       }
 
-      let activeReactionsList = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.sender == 1 && reaction.forPart == this.part)
+      let activeReactionsList = this.reactions.filter(reaction => reaction.reactionType >= 2000 && reaction.reactionType < 3000 && reaction.sender == 1 && reaction.forPart == (this.balloon ? 'b' : this.part))
       this.activeReactions = []
       activeReactionsList.forEach((reaction) => {
         this.activeReactions.push(reaction.reactionType)
@@ -175,7 +176,7 @@ export default {
       content: "";
       position: absolute;
       bottom: -5px;
-      right: 20px;
+      right: 11px;
       width: 10px;
       height: 10px;
       border-radius: 50%;
@@ -185,8 +186,8 @@ export default {
     &:before {
       content: "";
       position: absolute;
-      bottom: -12px;
-      right: 19px;
+      bottom: -11px;
+      right: 9px;
       width: 6px;
       height: 6px;
       border-radius: 50%;
@@ -195,12 +196,12 @@ export default {
 
     &.left {
       &:after {
-        left: 20px;
+        left: 11px;
         right: unset;
       }
 
       &:before {
-        left: 19px;
+        left: 9px;
         right: unset;
       }
     }

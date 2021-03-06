@@ -3,7 +3,12 @@
     <div class="chatWrapper" @mousedown="dragMouseDown" :style="{ left: '-'+slideX+'px' }">
       <div class="unread" :style="read ? 'background-color: transparent;' : ''"></div>
       <div class="avatarContainer">
-        <img v-if='(docid && docid != 0)' class="avatar" :src="`${$store.getters.httpURI}/contactimg?docid=${encodeURIComponent(docid)}&auth=${encodeURIComponent($store.state.password)}`" />
+        <avatar v-if="(docid && docid != 0) || isGroup" class='avatar'
+          :username="author"
+          :size="40"
+          inline
+          :src="`${$store.getters.httpURI}/contactimg?docid=${encodeURIComponent(isGroup ? chatid : docid)}&auth=${encodeURIComponent($store.state.password)}`"
+        />
         <img v-else class="avatar" src="../assets/profile.jpg" />
       </div>
       <div class="chatContent">
@@ -31,9 +36,10 @@
 <script>
 import moment from 'moment'
 import TypingIndicator from './TypingIndicator.vue'
+import Avatar from './Avatar'
 
 export default {
-  components: { TypingIndicator },
+  components: { TypingIndicator, Avatar },
   name: 'Chat',
   props: {
     chatid: { type: String },
@@ -42,7 +48,8 @@ export default {
     text: { type: String },
     date: { type: Number },
     read: { type: Boolean },
-    showNum: { type: Boolean }
+    showNum: { type: Boolean },
+    isGroup: { type: Boolean }
   },
   data () {
     return {

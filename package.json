@@ -41,6 +41,7 @@
     "usbmux": "^0.1.0",
     "v-lazy-image": "^1.4.0",
     "vue": "^2.6.11",
+    "vue-avatar": "^2.3.3",
     "vue-confirm-dialog": "^1.0.2",
     "vue-feather": "^1.1.1",
     "vue-js-popover": "^1.2.1",

@@ -1,7 +1,7 @@
 <template>
   <div class="expandable-image" :class="{ expanded: expanded, nostyle: $store.state.macstyle }" ref="this">
     <template v-if="loadedImage">
-      <i v-if="!expanded" class="expand-button" @click="expanded = true">
+      <i v-if="!expanded" class="expand-button" @click="expandImage">
         <feather type="maximize-2" stroke="#fff" size="24"></feather>
       </i>
       <i v-if="!expanded" class="download-button" @click="download">
@@ -22,66 +22,67 @@ export default {
   data () {
     return {
       expanded: false,
-      loadedImage: false
+      loadedImage: false,
+      cloned: null
     }
   },
   computed: {
     url() {
-      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(this.type)}&auth=${encodeURIComponent(this.$store.state.password)}`
+      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(this.type)}&auth=${encodeURIComponent(this.$store.state.password)}` + (this.$store.state.transcode ? '&transcode=1' : '')
     }
   },
-  mounted () {
-    
+  mounted() {
+    document.addEventListener('keydown', this.closeImage)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keydown', this.closeImage)
   },
   methods: {
     closeImage (event) {
-      this.expanded = false
       event.stopPropagation()
+      if (!this.cloned) return
+
+      this.$nextTick(() => {
+        this.cloned.style.opacity = 0
+        this.cloned.removeEventListener('touchmove', this.freezeVp, false)
+        this.cloned.removeEventListener('click', this.onExpandedImageClick)
+        setTimeout(() => {
+          this.cloned.remove()
+          this.cloned = null
+          this.expanded = false
+        }, 250)
+      })
+    },
+    expandImage() {
+      this.expanded = true
+      
+      this.$nextTick(() => {
+        this.cloned = this.$el.cloneNode(true)
+        document.body.appendChild(this.cloned)
+        $(this.cloned).addClass('expanded')
+        this.cloned.addEventListener('touchmove', this.freezeVp, false)
+        this.cloned.addEventListener('click', this.onExpandedImageClick)
+        this.$nextTick(() => this.cloned.style.opacity = 1)
+      })
     },
     freezeVp (e) {
       e.preventDefault()
     },
     onExpandedImageClick (e) {
-      e.stopPropagation()
-      this.expanded = false
+      this.closeImage(e)
     },
     download () {
       let a = document.createElement('a')
-      document.body.appendChild(a)
-      a.download = this.path.split('/').pop()
+      a.target = '_blank'
+      a.download = this.type
       a.href = this.url
+      document.body.appendChild(a)
       a.click()
       a.remove()
     },
     handleLoad () {
-      this.$nextTick(() => this.loadedData(true))
-      $(this.$refs.this).imagesLoaded().done(() => {
-        this.$nextTick(() => this.loadedData(true))
-        this.loadedImage = true
-      })
-    }
-  },
-  watch: {
-    expanded (status) {
-      this.$nextTick(() => {
-        if (status) {
-          this.cloned = this.$el.cloneNode(true)
-          document.body.appendChild(this.cloned)
-          this.cloned.addEventListener('touchmove', this.freezeVp, false);
-          this.cloned.addEventListener('click', this.onExpandedImageClick)
-          setTimeout(() => {
-            this.cloned.style.opacity = 1
-          }, 0)
-        } else {
-          this.cloned.style.opacity = 0
-          this.cloned.removeEventListener('touchmove', this.freezeVp, false);
-          this.cloned.removeEventListener('click', this.onExpandedImageClick)
-          setTimeout(() => {
-            this.cloned.remove()
-            this.cloned = null
-          }, 250)
-        }
-      })
+      this.$nextTick(this.loadedData)
+      this.loadedImage = true
     }
   }
 }
@@ -91,7 +92,6 @@ export default {
 .expandable-image {
   position: relative;
   transition: 0.25s opacity;
-  /* cursor: zoom-in; */
 
   &.nostyle {  
     border-radius: 10px;

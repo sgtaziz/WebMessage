@@ -18,59 +18,64 @@
         <img src="@/assets/loading.webp" style="height:18px;" />
       </div>
       <template v-else-if="$route.params.id != 'new' || this.receiver != ''">
-        <reactionMenu :target="reactingMessage" :reactions="reactingMessageReactions" :guid="reactingMessageGUID" :part="reactingMessagePart" @close="closeReactionMenu" @sendReaction="sendReaction"></reactionMenu>
+        <reactionMenu :target="reactingMessage" :reactions="reactingMessageReactions" :guid="reactingMessageGUID" :part="reactingMessagePart" :balloon="reactingToBalloon" @close="closeReactionMenu" @sendReaction="sendReaction"></reactionMenu>
         <simplebar class="messages" ref="messages">
           <div v-for="(msg, i) in sortedMessages" :key="'msg'+msg.id">
             <div class="timegroup" v-html="dateGroup(i-1, i)" v-if="dateGroup(i-1, i) != ''"></div>
+            <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
 
             <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type + (sortedMessages.length-1 == i ? ' last' : '')" class="messageGroup">
-              <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
+              <div class="authorAvatar" v-if="msg.group && msg.sender != 1">
+                <avatar :username="msg.author" :size="28" inline :customStyle="{ fontSize: '10px', fontWeight: '400' }"
+                  :src="`${$store.getters.httpURI}/contactimg?docid=${msg.authorDocid}&auth=${encodeURIComponent($store.state.password)}`"
+                />
+              </div>
 
-              <template v-for="(text, ii) in msg.texts">
-                <div :key="'wrapper'+ii" :id="'msg'+msg.id+'-text'+ii" class="textWrapper">
-                  <div
-                    v-for="(attachment, index) in text.attachments" :key="`${ii}-${index}`"
-                    class="attachment" :id="'msg'+msg.id+'-text'+ii+'-part'+index" 
-                    @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, index)"
-                    @mouseup.left="stopInterval" @mouseleave="stopInterval">
-                    <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, index)"
-                      :target="'#msg'+msg.id+'-text'+ii" :part="index" :reactions="text.reactions"
-                      :targetFromMe="msg.sender == 1"></reactions>
-                    <template v-if="attachment[0] != '' && !attachment[0].includes('.pluginPayloadAttachment')">
-                      <expandable-image v-if="isImage(attachment[1])"  :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
-                      <video-player v-else-if="isVideo(attachment[1])" :loadedData="scrollToBottom" :path="attachment[0]" :type="attachment[1]" />
-                      <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
-                    </template>
-                  </div>
-
-                  <div v-if="$options.filters.twemoji(text.text) != '' || text.undisplayable" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
-                    <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, text.attachments.length)"
-                      :target="'#msg'+msg.id+'-text'+ii" :part="text.attachments.length" 
-                      :reactions="text.reactions" :targetFromMe="msg.sender == 1"></reactions>
+              <div class="groupWrapper">
+                <template v-for="(text, ii) in msg.texts">
+                  <div :key="'wrapper'+ii" :id="'msg'+msg.id+'-text'+ii" class="textWrapper">
                     <div
-                      class="message"
-                      @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, text.attachments.length)" @mouseup.left="stopInterval" @mouseleave="stopInterval"
-                      :key="'msg'+msg.id+'-text'+ii"
-                      :class="(msg.texts.length-1 == ii ? 'last ' : '') + (isEmojis(text.text) ? 'jumbo' : '')"
-                      :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''">
-                      <div class="subject" v-if="text.subject && text.subject != ''" v-html="$options.filters.twemoji(text.subject)"></div>
+                      v-for="(attachment, index) in text.attachments" :key="`${ii}-${index}`"
+                      class="attachment" :id="'msg'+msg.id+'-text'+ii+'-part'+index" 
+                      @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, index)"
+                      @mouseup.left="stopInterval" @mouseleave="stopInterval" @mousemove="stopIntervalWhen"
+                      @click.right="rightClickMessage({ id: msg.id, ii, guid: text.guid, reactions: text.reactions, part: index })">
+                      <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, index)"
+                        :target="'#msg'+msg.id+'-text'+ii" :part="index" :reactions="text.reactions"
+                        :targetFromMe="msg.sender == 1"></reactions>
+                      <template v-if="attachment[0] != '' && !attachment[0].endsWith('.pluginPayloadAttachment')">
+                        <expandable-image v-if="isImage(attachment[1])"  :loadedData="attachmentLoaded" :path="attachment[0]" :type="attachment[1]" />
+                        <video-player v-else-if="isVideo(attachment[1])" :loadedData="attachmentLoaded" :path="attachment[0]" :type="attachment[1]" />
+                        <audio-player v-else-if="isAudio(attachment[0])" :loadedData="attachmentLoaded" :path="attachment[0]" :type="attachment[1]" />
+                        <download-attachment v-else :path="attachment[0]" :type="attachment[1]" />
+                      </template>
+                    </div>
 
-                      <span style="white-space: pre-wrap;" v-if="!text.undisplayable" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
-                      <div style="white-space: pre-wrap;text-align:center;" v-else>
-                        <div style="font-weight:500;font-size:14px;">Unsupported Type</div>
-                        <div style="font-size:11px;margin-top:4px;">
-                          This message cannot be viewed by WebMessage.
-                        </div>
-                        <feather type="frown" style="height:24px;" stroke="rgb(29,29,29)" size="16"></feather>
+                    <div v-if="$options.filters.twemoji(text.text) != '' || text.undisplayable" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
+                      <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, text.attachments.length, text.balloon)"
+                        :target="'#msg'+msg.id+'-text'+ii" :part="text.attachments.length" 
+                        :reactions="text.reactions" :targetFromMe="msg.sender == 1" :balloon="text.balloon"></reactions>
+                      <div
+                        class="message"
+                        @mousedown.left="startInterval(msg.id, ii, text.guid, text.reactions, text.attachments.length, text.balloon)" @mouseup.left="stopInterval" @mouseleave="stopInterval"
+                        @mousemove="stopIntervalWhen" @click.right="rightClickMessage({ id: msg.id, ii, guid: text.guid, reactions: text.reactions, part: text.attachments.length, balloon: text.balloon })"
+                        :key="'msg'+msg.id+'-text'+ii"
+                        :class="{ last: msg.texts.length-1 == ii, jumbo: isEmojis(text.text), payload: text.undisplayable || text.payload }"
+                        :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''">
+                        <div class="subject" v-if="text.subject && text.subject != ''" v-html="$options.filters.twemoji(text.subject)"></div>
+
+                        <span style="white-space: pre-wrap;" v-if="!text.undisplayable && !text.payload" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                        <payload-attachment v-else-if="!text.undisplayable && text.payload" :payloadData="text.payload" :loadedData="attachmentLoaded" @refreshRequest="reloadMessage(text.guid)" />
+                        <unsupported-message v-else />
                       </div>
                     </div>
+
+                    <div class="receipt" :key="'msg'+msg.id+'-text'+ii+'-receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
+                      <span class="type">{{ text.read > 0 ? "Read" : "Delivered" }}</span> {{ humanReadableTimestamp(text.read > 0 ? text.read : text.delivered) }}
+                    </div>
                   </div>
-                  
-                </div>
-                <div class="receipt" :key="'msg'+msg.id+'-text'+ii+'-receipt'" v-if="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0)">
-                  <span class="type">{{ text.read > 0 ? "Read" : "Delivered" }}</span> {{ humanReadableTimestamp(text.read > 0 ? text.read : text.delivered) }}
-                </div>
-              </template>
+                </template>
+              </div>
             </div>
           </div>
 
@@ -91,15 +96,19 @@
             </div>
           </div>
           <div class="msgTextboxWrapper">
-            <input type="text" v-model="subjectInput" v-if="$store.state.subjectLine" class="subjectLine" ref="subjectLine" placeholder="Subject" @keyup.enter.exact="sendText" :class="{ noTopBorder: hasAttachments }">
+            <input type="text" v-model="subjectInput" v-if="$store.state.subjectLine" class="subjectLine" id="subjectInput" ref="subjectLine" placeholder="Subject"
+              @keyup.enter.exact="sendText" @keyup="sendTypingIndicator(subjectInput)" :class="{ noTopBorder: hasAttachments }">
             <twemoji-textarea @contentChanged="autoResize" :placeholder="this.messages[0] ? this.messages[0].type.replace('SMS', 'Text Message') : 'Send a message'"
               :emojiData="emojiDataAll"
               :emojiGroups="emojiGroups"
+              :recentEmojisFeat="true"
+              recentEmojisStorage="local"
+              :searchEmojisFeat="true"
               :initialContent="messageText[$route.params.id]"
               :class="(hasAttachments || $store.state.subjectLine) ? 'noTopBorder' : ''"
               @enterKey="sendText">
               <template v-slot:twemoji-picker-button>
-                <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
+                <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26" style="margin-top: -1px;"></feather>
               </template>
             </twemoji-textarea>
           </div>
@@ -133,6 +142,10 @@ import Reactions from './Reactions'
 import axios from 'axios'
 import { parseBuffer } from 'bplist-parser'
 import TypingIndicator from './TypingIndicator.vue'
+import PayloadAttachment from './PayloadAttachment.vue'
+import Avatar from './Avatar.vue'
+import AudioPlayer from './AudioPlayer.vue'
+import UnsupportedMessage from './UnsupportedMessage.vue'
 
 export default {
   name: 'Message',
@@ -146,7 +159,11 @@ export default {
     UploadButton,
     ReactionMenu,
     Reactions,
-    TypingIndicator
+    TypingIndicator,
+    PayloadAttachment,
+    Avatar,
+    AudioPlayer,
+    UnsupportedMessage,
   },
   data: function () {
     return {
@@ -162,23 +179,27 @@ export default {
       hasAttachments: false,
       interval: null,
       timeHolding: 0,
+      initialX: null,
+      initialY: null,
       reactingMessage: null,
       reactingMessageGUID: null,
       reactingMessageReactions: null,
       reactingMessagePart: 0,
-      subjectInput: ''
+      reactingToBalloon: false,
+      subjectInput: '',
+      lastTypingValue: ''
     }
   },
   computed: {
     emojiDataAll() {
       let data = EmojiAllData.filter((obj) => {
-        return obj.group != 2
+        return true//obj.group != 2
       })
       return data
     },
     emojiGroups() {
       let groups = EmojiGroups.filter((obj) => {
-        return obj.description != '🦲'
+        return true//obj.description != '🦲'
       })
       return groups
     },
@@ -197,7 +218,7 @@ export default {
       const groupDates = (date1, date2) => (date2 - date1 < 3600000)
       const groupAuthor = (author1, author2) => (author1 == author2)
 
-      const groupedMessages = messages.reduce((r, { text, subject, dateRead, dateDelivered, guid, reactions, payload, ...rest }, i, arr) => {
+      const groupedMessages = messages.reduce((r, { text, subject, dateRead, dateDelivered, guid, reactions, balloonReactions, payload, attachments, balloonBundle, ...rest }, i, arr) => {
         const prev = arr[i +-1]
         let extras = { }
 
@@ -217,9 +238,15 @@ export default {
               parsedData[lastClassname].push(object)
             })
 
-            extras.data = parsedData
+            extras.payload = parsedData
           } catch (error) {
             extras.undisplayable = true
+          }
+
+          let supportedFormats = ['', 'com.apple.messages.URLBalloonProvider']
+          if (!extras.undisplayable && balloonBundle && !supportedFormats.includes(balloonBundle)) {
+            extras.undisplayable = true
+            attachments = []
           }
         }
 
@@ -228,13 +255,14 @@ export default {
             text: text,
             subject: subject,
             date: rest.date,
-            attachments: rest.attachments,
+            attachments: attachments,
             read: dateRead,
             delivered: dateDelivered,
             guid: guid,
             reactions:
             reactions,
             showStamp: rest.sender == 1 && (!lastSentMessageFound || (!lastReadMessageFound && dateRead > 0)),
+            balloon: balloonBundle != null,
             ...extras
           })
         } else {
@@ -244,12 +272,13 @@ export default {
               text: text,
               subject: subject,
               date: rest.date,
-              attachments: rest.attachments,
+              attachments: attachments,
               read: dateRead,
               delivered: dateDelivered,
               guid: guid,
               reactions: reactions,
               showStamp: rest.sender == 1 && (!lastSentMessageFound || (!lastReadMessageFound && dateRead > 0)),
+              balloon: balloonBundle != null,
               ...extras
             }]
           })
@@ -299,12 +328,20 @@ export default {
     isVideo(type) {
       return type.includes('video/')
     },
-    startInterval (msgId, textId, guid, reactions, part) {
+    isAudio(file) {
+      let ext = file.split('.').pop()
+      let formats = ['mp3', 'caf', 'wav', 'flac', 'm4a', 'wma', 'aac']
+      return formats.includes(ext.toLowerCase())
+    },
+    rightClickMessage(args) {
+      ipcRenderer.send('rightClickMessage', args)
+    },
+    startInterval (msgId, textId, guid, reactions, part, balloon) {
       if (!this.interval) {
         this.interval = setInterval(() => {
           this.timeHolding++
           if (this.timeHolding > 7) { //> 0.7 seconds, will trigger at 0.8 seconds
-            this.openReactionMenu(msgId, textId, guid, reactions, part)
+            this.openReactionMenu(msgId, textId, guid, reactions, part, balloon)
             clearInterval(this.interval)
             this.interval = false
             this.timeHolding = 0
@@ -316,6 +353,18 @@ export default {
       clearInterval(this.interval)
       this.interval = false
       this.timeHolding = 0
+      this.initialX = null
+      this.initialY = null
+    },
+    stopIntervalWhen (e) {
+      if (this.interval) {
+        if (!this.initialX) this.initialX = e.clientX
+        if (!this.initialY) this.initialY = e.clientY
+
+        if (Math.abs(this.initialX - e.clientX) > 4 || Math.abs(this.initialY - e.clientY) > 4) {
+          this.stopInterval()
+        }
+      }
     },
     closeReactionMenu () {
       this.reactingMessage = null
@@ -439,13 +488,19 @@ export default {
         setTimeout(this.fetchMessages, 1000)
       }
     },
+    reloadMessage(guid) {
+      this.sendSocket({ action: 'getMessageByGUID', data: {
+          guid: guid,
+        }
+      })
+    },
     autoResize (value) {
-      var el = document.getElementById('twemoji-textarea')
-
       if (value !== false) {
         this.$set(this.messageText, this.$route.params.id, value)
+        this.sendTypingIndicator(value)
       }
 
+      var el = document.getElementById('twemoji-textarea')
       this.$nextTick(() => {
         let scrollHeight = el.scrollHeight
         el.style.setProperty('height', '22px', 'important')
@@ -455,12 +510,29 @@ export default {
         }
       })
     },
-    openReactionMenu (msgId, textId, guid, reactions, part) {
+    sendTypingIndicator(value) {
+      if (this.lastTypingValue == value) return
+      this.lastTypingValue = value
+
+      if (value != '') {
+        this.sendSocket({ action: 'setIsLocallyTyping', data: {
+          chatId: this.messages[0].chatId,
+          typing: true
+        }})
+      } else {
+        this.sendSocket({ action: 'setIsLocallyTyping', data: {
+          chatId: this.messages[0].chatId,
+          typing: false
+        }})
+      }
+    },
+    openReactionMenu (msgId, textId, guid, reactions, part, balloon) {
       let el = $('#msg'+msgId+'-text'+textId+'-part'+part)
       this.reactingMessageReactions = reactions
       this.reactingMessageGUID = guid
       this.reactingMessagePart = part
       this.reactingMessage = el
+      this.reactingToBalloon = balloon
     },
     sendReaction (reactionId, guid, part) {
       if (!this.messages[0]) return
@@ -492,35 +564,35 @@ export default {
         subject: subjectText
       }
       
-      document.getElementById("twemoji-textarea").innerHTML = ""
       this.messageText[this.$route.params.id] = ""
-      if (this.$refs.subjectLine) this.$refs.subjectLine.value = ""
-      this.subjectInput = ''
 
       axios.post(this.$store.getters.httpURI+'/sendText', textObj)
         .then(response => {
+          let focusedEl = $(document.activeElement).attr('id')
           if (this.$refs.uploadButton) {
             this.$refs.uploadButton.clear()
           }
+          this.$nextTick(() => $('#'+focusedEl).focus())
 
           this.canSend = true
           this.autoResize(false)
+          this.subjectInput = ''
+          document.getElementById("twemoji-textarea").innerHTML = ""
         })
         .catch(error => {
           alert("There was an error while sending your text.\n" + error)
           this.canSend = true
           this.autoResize(false)
+          this.subjectInput = ''
+          document.getElementById("twemoji-textarea").innerHTML = ""
         })
     },
-    scrollToBottom (force) {
+    scrollToBottom () {
       if (this.$refs.messages) {
         let container = this.$refs.messages.SimpleBar.getScrollElement()
         let scrollTo = this.lastHeight ? (container.scrollHeight - this.lastHeight) : container.scrollHeight
-        if (force && this.offset <= 25) scrollTo = container.scrollHeight
 
         container.scrollTop = scrollTo
-
-        if (document.getElementById('twemoji-textarea') && !this.lastHeight) document.getElementById('twemoji-textarea').focus()
 
         $(document).off('click', '.message a[href^="http"]')
         $(document).on('click', '.message a[href^="http"]', function(event) {
@@ -528,6 +600,10 @@ export default {
           shell.openExternal(this.href)
         })
       }
+    },
+    attachmentLoaded() {
+      this.ignoreNextScroll = true
+      this.scrollToBottom()
     },
     autoCompleteHooks () {
       if (this.$route.params.id == 'new') {
@@ -555,7 +631,7 @@ export default {
       }
     },
     previewFiles () {
-      this.hasAttachments = this.$refs.uploadButton && this.$refs.uploadButton.attachments != null
+      this.hasAttachments = this.$refs.uploadButton && this.$refs.uploadButton.attachments != null && this.$refs.uploadButton.attachments.length > 0
       this.autoResize(false)
     },
     removeAttachment (i) {
@@ -564,11 +640,11 @@ export default {
     },
     postLoad () {
       if (this.offset == 0) {
-        setTimeout(() => {
+        this.$nextTick(() => {
           if (this.$refs.messages) {
             let container = this.$refs.messages.SimpleBar.getScrollElement()
             container.addEventListener('scroll', (e) => {
-              if (this.ignoreNextScroll) {
+              if (this.ignoreNextScroll && this.lastHeight == null) {
                 this.ignoreNextScroll = false
                 return
               }
@@ -584,13 +660,15 @@ export default {
               }
             })
           }
-        }, 100)
+        })
 
         this.$emit('markAsRead', this.$route.params.id)
       }
 
+      this.ignoreNextScroll = true
       this.$nextTick(this.scrollToBottom)
-      setTimeout(this.scrollToBottom, 10) //Just in case
+      let el = document.getElementById('twemoji-textarea')
+      if (el) el.focus()
 
       this.offset += this.limit
       this.loading = false
@@ -638,6 +716,10 @@ export default {
   mounted () {
     this.$nextTick(this.autoCompleteHooks)
     this.fetchMessages()
+
+    ipcRenderer.on('reactToMessage', (e, args) => {
+      this.openReactionMenu(args.id, args.ii, args.guid, args.reactions, args.part, args.balloon)
+    })
   },
   socket: {
     fetchMessages (data) {
@@ -661,15 +743,16 @@ export default {
           this.$set(this.messages, messageIndex, this.messages[messageIndex]) // Reactivity in Vue is weird
           
           if (this.lastHeight == null) {
-            this.$nextTick(() => { this.scrollToBottom() })
+            this.ignoreNextScroll = true
+            this.$nextTick(this.scrollToBottom)
           }
         }
       }
     },
     setTypingIndicator (data) {
       if (data && data.chat_id == this.$route.params.id && this.lastHeight == null) {
+        this.ignoreNextScroll = true
         this.$nextTick(this.scrollToBottom)
-        setTimeout(this.scrollToBottom, 10)
       }
     },
     newMessage (data) {
@@ -690,6 +773,7 @@ export default {
         if (this.messages && this.messages.length > 0 && message[0]['personId'] == this.$route.params.id) {
           let oldMsgIndex = this.messages.findIndex(obj => obj.guid == message[0].guid)
           if (oldMsgIndex != -1) {
+            this.messages[oldMsgIndex] = message[0]
             this.$set(this.messages, oldMsgIndex, message[0]) 
             return
           }
@@ -698,12 +782,12 @@ export default {
           this.messages.unshift(message[0])
 
           if (this.lastHeight == null) {
+            // this.ignoreNextScroll = true
             this.$nextTick(this.scrollToBottom)
-            setTimeout(this.scrollToBottom, 10) //Just in case
           }
 
           if (this.lastHeight == null) {
-            this.$emit('markAsRead')
+            this.$emit('markAsRead', this.$route.params.id)
           }
         }
       }
@@ -885,7 +969,7 @@ export default {
     padding-right: 10px !important;
     background: rgba(29,29,29, 1) !important;
     border: 1px solid #545454 !important;
-    line-height: 18px !important;
+    line-height: 22px !important;
     font-size: 13px !important;
     margin-left: 6px !important;
     margin-right: 6px !important;
@@ -911,7 +995,7 @@ export default {
 
     .emoji-popover-inner {
       width: auto !important;
-      height: 182px !important;
+      height: 170px !important;
       background: none !important;
     }
   }
@@ -957,9 +1041,30 @@ export default {
   }
 
   #emoji-container {
+    #emoji-popover-search {
+      background-color: rgb(50,50,50) !important;
+      margin: 0 !important;
+
+      #search-header {
+        border: none !important;
+        border-radius: 6px !important;
+
+        &.is-focused {
+          background-color: rgb(75,75,75) !important;
+        }
+
+        input {
+          padding: 5px 5px !important;
+          color: white;
+          font-size: 14px !important;
+        }
+      }
+    }
+
     #emoji-popover-header {
       padding: 5px !important;
-      padding-bottom: 20px !important;
+      padding-top: 0px !important;
+      padding-bottom: 15px !important;
       border-bottom: 1px solid lighten(#555, 30%) !important;
     }
 
@@ -988,6 +1093,12 @@ export default {
       }
     }
   }
+}
+
+.textboxContainer #emoji-container > #emoji-popup #emoji-popover-search > #search-header > span {
+  width: 2px !important;
+  padding: 0px 10px;
+  margin-top: -2px;
 }
 
 .emoji-picker__search {
@@ -1047,7 +1158,8 @@ export default {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: #2284FF;
+    background: #1287FF;
+    margin-left: -20px;
     float: right;
     display: flex;
     justify-content: center;
@@ -1170,7 +1282,7 @@ export default {
   .senderName {
     color: #999999;
     font-size: 0.85em;
-    margin-left: 10px;
+    margin-left: 54px;
   }
 }
 
@@ -1179,7 +1291,23 @@ export default {
   padding-left: 20px;
   padding-right: 20px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+
+  .groupWrapper {
+    // display: flex;
+    width: 100%;
+    display: inline-flex;
+    flex-direction: column;
+  }
+
+  .authorAvatar {
+    z-index: 2;
+    margin-left: -10px;
+    margin-top: 0px;
+    margin-right: 8px;
+    display: inline-flex;
+    align-self: flex-end;
+  }
 
   &.last {
     margin-bottom: 0px;
@@ -1222,14 +1350,17 @@ export default {
 }
 
 .message {
-  border-radius: 18px;
+  border-radius: 14px;
   padding: 6px 10px;
   margin-top: 0px;
   margin-bottom: 0px;
   max-width: 100%;
-  display: inline-block;
   text-align: start;
   unicode-bidi: plaintext;
+
+  &.payload {
+    padding: 0;
+  }
 
   .subject {
     white-space: pre-wrap;
@@ -1244,9 +1375,16 @@ export default {
 
 .send.iMessage {
   .message {
-    background-color: #2284FF !important;
+    background-color: #1287FF !important;
     &:before {
-      background: #2284FF !important;
+      background: #1287FF !important;
+    }
+
+    &.payload {
+      background-color: #3A3A3C !important;
+      &:before {
+        background: #3A3A3C !important;
+      }
     }
   }
 }
@@ -1316,6 +1454,7 @@ export default {
 
 .send {
   align-items: flex-end;
+  justify-content: flex-end;
 
   .textWrapper {
     display: flex;

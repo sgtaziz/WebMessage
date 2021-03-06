@@ -16,7 +16,7 @@ export default {
   },
   data() {
     return {
-      attachments: null,
+      attachments: [],
       progress: 0,
       isReading: false,
       sizeLimit: 100 // In MB. Files larger than this cause the client to crash for some reason.
@@ -56,7 +56,7 @@ export default {
     },
     clear() {
       this.isReading = false
-      this.attachments = null
+      this.attachments = []
       this.$refs.fileInput.value = ''
       this.progress = 0
       this.$emit('filesChanged')
