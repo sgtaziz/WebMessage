@@ -735,7 +735,7 @@ export default {
     },
     setAsRead (data) {
       if (this.$route.params.id == 'new' || !data) return
-      if (this.messages[0]['chatId'] == data.chatId || this.$route.params.id == data.chatId) {
+      if (this.$route.params.id == data.chatId) {
         let messageIndex = this.messages.findIndex(obj => obj.guid == data.guid)
         if (messageIndex > -1) {
           this.messages[messageIndex]['dateRead'] = data.read

@@ -60,7 +60,6 @@ export default {
   },
   methods: {
     populateValues() {
-      console.log(this.payloadData)
       this.icon = this.payloadData.LPIconMetadata ? this.payloadData.LPIconMetadata[0] : null
       // if (!this.icon) this.icon = this.payloadData.RichLinkImageAttachmentSubstitute ? this.payloadData.RichLinkImageAttachmentSubstitute[0] : null
       

@@ -351,6 +351,8 @@ export default {
       var messageData = data.message[0]
 
       if (messageData) {
+        this.$store.commit('setTyping', { chatId: messageData.personId, isTyping: false })
+        
         if (this.$store.state.messagesCache[messageData.personId]) {
           let oldMsgIndex = this.$store.state.messagesCache[messageData.personId].findIndex(obj => obj.guid == messageData.guid)
           if (oldMsgIndex != -1) {
@@ -455,6 +457,7 @@ export default {
     },
     setTypingIndicator (data) {
       if (data && data.chat_id) {
+        console.log('sending', data)
         let chatId = data.chat_id
         let typing = (data.typing == true)
 
