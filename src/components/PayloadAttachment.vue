@@ -90,6 +90,11 @@ export default {
     },
     handleLoad() {
       this.$nextTick(this.loadedData)
+    },
+    escape(e) {
+      if (e.key == 'Escape' && this.$refs.videoPlayer && document.fullscreenElement !== null) {
+        document.exitFullscreen()
+      }
     }
   },
 }
