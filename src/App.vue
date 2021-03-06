@@ -157,11 +157,7 @@ export default {
       }
     },
     closeWindow () {
-      if (this.$store.state.minimize) {
-        ipcRenderer.send('minimizeToTray')
-      } else {
-        ipcRenderer.send('quitApp')
-      }
+      this.win.close()
     },
     minimizeWindow () {
       this.win.minimize()

@@ -83,7 +83,7 @@ async function createWindow() {
   })
 
   win.on('close', (e) => {
-    if (app.isQuitting) {
+    if (app.isQuitting || !persistentStore.get('minimize', true)) {
       app.quit()
     } else {
       e.preventDefault()

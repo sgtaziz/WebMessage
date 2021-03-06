@@ -62,6 +62,8 @@ export default {
     populateValues() {
       console.log(this.payloadData)
       this.icon = this.payloadData.LPIconMetadata ? this.payloadData.LPIconMetadata[0] : null
+      // if (!this.icon) this.icon = this.payloadData.RichLinkImageAttachmentSubstitute ? this.payloadData.RichLinkImageAttachmentSubstitute[0] : null
+      
       this.large = this.payloadData.LPImageMetadata != null || (this.payloadData.LPIconMetadata && this.payloadData.LPIconMetadata[1] != '{0, 0}')
       this.title = this.payloadData.NSURL ? this.payloadData.NSURL[1] : null
       this.subtitle = this.payloadData.root[0].replace('http://', '').replace('https://', '').replace('www.', '').split('/')[0].toLowerCase()

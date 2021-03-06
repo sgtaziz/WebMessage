@@ -53,7 +53,7 @@
               <label class="switch">
                 <input type="checkbox" v-model="minimize">
                 <i></i>
-                <div>Keep in tray</div>
+                <div>Close to tray</div>
               </label>
               <label class="switch" v-if="process.platform !== 'darwin'">
                 <input type="checkbox" v-model="macstyle">
