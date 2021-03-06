@@ -34,7 +34,6 @@ export default {
   methods: {
     download () {
       let a = document.createElement('a')
-      a.target = '_blank'
       a.download = this.type
       a.href =  this.url
       document.body.appendChild(a)
