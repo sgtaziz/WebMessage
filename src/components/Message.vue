@@ -6,7 +6,7 @@
           <span class="label">To:</span>
           <span class="contact" v-if="messages[0] && $route.params.id != 'new'" v-html="$options.filters.nativeEmoji(messages[0].name)"></span>
           <span class="contact" v-else-if="$route.params.id == 'new'" style="overflow: visible;">
-            <autocomplete :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
+            <autocomplete ref="autoComplete" :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
           </span>
         </div>
         <div class="closeBtn" @click="$router.push('/')">
@@ -212,8 +212,8 @@ export default {
   },
   computed: {
     sortedMessages() {
-      // let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
-      let messages = this.messages
+      let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
+      // let messages = this.messages
       let lastSentMessageFound = false
       let lastReadMessageFound = false
 
@@ -495,7 +495,7 @@ export default {
       } else if (result) {
         this.autoCompleteInput(result)
       } else {
-        var input = document.getElementsByClassName('autocomplete-input')[0]
+        var input = this.$refs.autoComplete
         if (input) {
           this.autoCompleteInput(input.value)
         }
@@ -583,7 +583,7 @@ export default {
       })
     },
     sendTypingIndicator(value) {
-      if (this.lastTypingValue == value) return
+      if (this.lastTypingValue == value || !this.messages[0]) return
       if (Date.now() - this.lastTypingStamp <= 55000 && value != '' && this.lastTypingValue != '') return
       this.lastTypingValue = value
       this.lastTypingStamp = Date.now()
@@ -703,8 +703,8 @@ export default {
       } else if (/^\+\d{11,16}/gi.test(input)) {
         this.receiver = input
         this.hookPasteAndDrop()
-      } else if (/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(input)) {
-        this.receivfoer = input
+      } else if (/^([a-zA-Z0-9_.+-])+\@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,6})+$/.test(input)) {
+        this.receiver = input
         this.hookPasteAndDrop()
       }
     },
@@ -1355,6 +1355,10 @@ export default {
     margin-right: 8px;
     display: inline-flex;
     align-self: flex-end;
+    
+    img {
+      border-radius: 50%;
+    }
   }
 
   &.last {

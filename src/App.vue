@@ -281,15 +281,13 @@ export default {
             withFallback: true,
             customPath: path.join(__dirname, '../terminal-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier')
           })
-          
-          console.log(__dirname)
         } else {
           Notifier = require('node-notifier')
         }
         
         Notifier.notify(options, (err, action, metadata)=> {
           if (err) return
-          if (action == 'activate' && chatData && chatData.id) {
+          if ((action == 'activate' || action == undefined) && chatData && chatData.id) {
             ipcRenderer.send('show_win')
             this.$router.push('/message/'+messageData.personId)
           }
@@ -423,7 +421,8 @@ export default {
             appID: 'com.sgtaziz.WebMessage',
             title: messageData.name,
             message: body == '' ? 'Attachment' : body,
-            sound: this.$store.state.systemSound
+            sound: this.$store.state.systemSound,
+            reply: true
           }
 
           if (document.hasFocus()) return

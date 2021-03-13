@@ -61,7 +61,6 @@ async function createWindow() {
       devTools: isDevelopment && !process.env.IS_TEST,
       spellcheck: true
     },
-    icon: path.join(__static, 'icon.png'),
     title: 'WebMessage'
   })
 

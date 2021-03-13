@@ -107,3 +107,10 @@ export default {
   }
 }
 </script>
+<style lang="scss" scoped>
+.vue-avatar--wrapper {
+  img {
+    max-width: 100%;
+  }
+}
+</style>

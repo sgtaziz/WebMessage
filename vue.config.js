@@ -19,6 +19,12 @@ module.exports = {
         snap: {
           publish: ['github']
         },
+        win: {
+          icon: 'build/icons/icon.ico'
+        },
+        mac: {
+          icon: 'build/icons/icon.icns'
+        },
         extraFiles: [
           {
             from: 'node_modules/node-notifier/vendor/',
