@@ -18,7 +18,17 @@ module.exports = {
         publish: ['github'],
         snap: {
           publish: ['github']
-        }
+        },
+        extraFiles: [
+          {
+            from: 'node_modules/node-notifier/vendor/',
+            to: 'resources/vendor'
+          },
+          {
+            from: 'vendor/',
+            to: 'resources/terminal-notifier/vendor'
+          }
+        ]
       }
     }
   }

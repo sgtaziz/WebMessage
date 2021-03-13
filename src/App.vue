@@ -64,7 +64,6 @@ import Chat from './components/Chat.vue'
 import Settings from "./components/Settings.vue"
 import simplebar from 'simplebar-vue'
 import 'simplebar/dist/simplebar.css'
-import Notifier from 'node-notifier'
 import axios from 'axios'
 
 export default {
@@ -251,6 +250,51 @@ export default {
       } else {
         setTimeout(this.cacheMessages, 1000)
       }
+    },
+    sendNotifierNotification (options, messageData, chatData) {
+      let tempDir = path.join(__dirname, '..', 'temp')
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir)
+      }
+
+      const download = require('image-downloader')
+      const fileDir = path.join(tempDir, `avatar_${messageData.authorDocid}.jpg`)
+      const dlOptions = {
+        url: `${this.$store.getters.httpURI}/contactimg?docid=${messageData.authorDocid}&auth=${encodeURIComponent(this.$store.state.password)}`,
+        dest: fileDir,
+        agent: new require('https').Agent({ rejectUnauthorized: false })
+      }
+
+      download.image(dlOptions).then((resp) => {
+        options.icon = fileDir
+        if (fs.statSync(fileDir).size == 0) throw Error('Empty image')
+      }).catch(() => {
+        options.icon = __static + '/icon.png'
+      }).finally(() => {
+        if (!this.$store.state.systemSound) this.notifSound.play()
+
+        const NotificationCenter = require('node-notifier').NotificationCenter
+        let Notifier = null
+
+        if (process.platform === 'darwin') {
+          Notifier = new NotificationCenter({
+            withFallback: true,
+            customPath: path.join(__dirname, '../terminal-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier')
+          })
+          
+          console.log(__dirname)
+        } else {
+          Notifier = require('node-notifier')
+        }
+        
+        Notifier.notify(options, (err, action, metadata)=> {
+          if (err) return
+          if (action == 'activate' && chatData && chatData.id) {
+            ipcRenderer.send('show_win')
+            this.$router.push('/message/'+messageData.personId)
+          }
+        })
+      })
     }
   },
   beforeDestroy () {
@@ -383,34 +427,7 @@ export default {
           }
 
           if (document.hasFocus()) return
-
-          let tempDir = path.join(__dirname, 'temp')
-          if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir)
-          }
-
-          const download = require('image-downloader')
-          const fileDir = path.join(tempDir, `avatar_${messageData.authorDocid}.jpg`)
-          const dlOptions = {
-            url: `${this.$store.getters.httpURI}/contactimg?docid=${messageData.authorDocid}&auth=${encodeURIComponent(this.$store.state.password)}`,
-            dest: fileDir,
-            agent: new require('https').Agent({ rejectUnauthorized: false })
-          }
-
-          download.image(dlOptions).then((resp) => {
-            notificationOptions.icon = fileDir
-            if (fs.statSync(fileDir).size == 0) throw Error('Empty image')
-          }).catch((err) => {
-            notificationOptions.icon = notificationOptions.icon = __static + '/icon.png'
-          }).finally(() => {
-            if (!this.$store.state.systemSound) this.notifSound.play()
-            Notifier.notify(notificationOptions, (err, resp, metadata)=> {
-              if (chatData && chatData.id) {
-                ipcRenderer.send('show_win')
-                this.$router.push('/message/'+messageData.personId)
-              }
-            })
-          })
+          this.sendNotifierNotification(notificationOptions, messageData, chatData)
         } else if (messageData.sender != 1) {
           console.log('Notifications are not supported on this system.')
         }
@@ -442,43 +459,16 @@ export default {
         if (this.lastNotificationGUID == reaction.guid) return
         if (this.$route.params.id == reaction.personId && document.hasFocus()) return
         this.lastNotificationGUID = reaction.guid
-        console.log(reaction)
+        
         const notificationOptions = {
           appID: 'com.sgtaziz.WebMessage',
-          title: reaction.name,
+          title: chatData.author,
           message: reaction.text.replace(/\u{fffc}/gu, ""),
           sound: this.$store.state.systemSound
         }
 
         if (document.hasFocus()) return
-
-        let tempDir = path.join(__dirname, 'temp')
-        if (!fs.existsSync(tempDir)) {
-          fs.mkdirSync(tempDir)
-        }
-
-        const download = require('image-downloader')
-        const fileDir = path.join(tempDir, `avatar_${reaction.authorDocid}.jpg`)
-        const dlOptions = {
-          url: `${this.$store.getters.httpURI}/contactimg?docid=${reaction.authorDocid}&auth=${encodeURIComponent(this.$store.state.password)}`,
-          dest: fileDir,
-          agent: new require('https').Agent({ rejectUnauthorized: false })
-        }
-
-        download.image(dlOptions).then((resp) => {
-          notificationOptions.icon = fileDir
-          if (fs.statSync(fileDir).size == 0) throw Error('Empty image')
-        }).catch((err) => {
-          notificationOptions.icon = notificationOptions.icon = __static + '/icon.png'
-        }).finally(() => {
-          if (!this.$store.state.systemSound) this.notifSound.play()
-          Notifier.notify(notificationOptions, (err, resp, metadata)=> {
-            if (chatData && chatData.id) {
-              ipcRenderer.send('show_win')
-              this.$router.push('/message/'+reaction.personId)
-            }
-          })
-        })
+        this.sendNotifierNotification(notificationOptions, reaction, chatData)
       } else if (reactions && reactions.length > 0 && reactions[0].sender != 1) {
         console.log('Notifications are not supported on this system.')
       }
