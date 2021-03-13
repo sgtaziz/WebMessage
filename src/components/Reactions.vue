@@ -8,7 +8,11 @@
           left: position.left ? ((position.left+(targetFromMe ? (-i*3) : (i*3)))+'px') : null,
           right: position.right ? ((position.right+(targetFromMe ? (i*3) : (-i*3)))+'px') : null
         }">
-        <font-awesome-icon v-if="reaction.icon" :icon="reaction.icon.name" size="lg" :style="reaction.icon.style" />
+        <font-awesome-icon v-if="reaction.icon && reaction.icon.name != 'exclamation'" :icon="reaction.icon.name" size="lg" :style="reaction.icon.style" />
+        <font-awesome-layers v-else-if="reaction.icon.name == 'exclamation'" class="fa-1x">
+          <font-awesome-icon :icon="reaction.icon.name" size="1x" transform="left-3 down-1 shrink-1 rotate-355" />
+          <font-awesome-icon :icon="reaction.icon.name" size="1x" transform="right-3 rotate-4" />
+        </font-awesome-layers>
       </div>
     </div>
   </transition>
@@ -49,14 +53,14 @@ export default {
   data() {
     return {
       icons: [
-        { name: 'heart', id: 2000, style: { color: '#FA5E96' } },
+        { name: 'heart', id: 2000, style: { color: '#FA5C99' } },
         { name: 'thumbs-up', id: 2001 },
-        { name: 'thumbs-down', id: 2002 },
+        { name: 'thumbs-down', id: 2002, style: { transform: 'scaleX(-1)'} },
         { name: 'laugh-squint', id: 2003 },
         { name: 'exclamation', id: 2004 },
         { name: 'question', id: 2005 },
       ],
-      position: { top: 4, left: 0 }
+      position: { top: 3, left: 0 }
     }
   },
   mounted() {
@@ -70,10 +74,10 @@ export default {
   methods: {
     adjustPostion () {
       this.position.left = null
-      this.position.right = -13
+      this.position.right = -18
       if (this.targetFromMe) {
         this.position.right = null
-        this.position.left = -13
+        this.position.left = -18
       }
     }
   },
@@ -87,9 +91,21 @@ export default {
   height: 18px;
   width: 100%;
 
+  &.left {
+    .bubble {
+      &::before, &::after {
+        right: 0px;
+        left: auto;
+      }
+      &::after {
+        right: -4px;
+      }
+    }
+  }
+
   .bubble {
     background-color: #3A3A3C;
-    padding: 5px;
+    padding: 6px;
     position: absolute;
     border: solid 1px #1D1D1D;
     border-radius: 50%;
@@ -98,13 +114,44 @@ export default {
     line-height: 12px;
     // transition: 0.3s;
 
+    &::before {
+      content: " ";
+      width: 8px;
+      height: 8px;
+      background-color: #3A3A3C;
+      border-radius: 50%;
+      position: absolute;
+      bottom: -1px;
+      left: 0px;
+    }
+
+    &::after {
+      content: " ";
+      width: 4px;
+      height: 4px;
+      background-color: #3A3A3C;
+      border-radius: 50%;
+      position: absolute;
+      bottom: -4px;
+      left: -4px;
+    }
+
     svg {
       width: 100%;
       height: 100%;
     }
 
+    .fa-layers {
+      height: 1.1em;
+      width: 1.1em;
+    }
+
     &.isMe {
-      background-color: #2284FF;
+      background-color: #1287FF;
+
+      &::before, &::after {
+        background-color: #1287FF;
+      }
     }
   }
 }

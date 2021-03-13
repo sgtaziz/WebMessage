@@ -4,7 +4,7 @@
       <div class="titlebar">
         <div class="receiverContainer">
           <span class="label">To:</span>
-          <span class="contact" v-if="messages[0] && $route.params.id != 'new'" v-html="$options.filters.twemoji(messages[0].name)"></span>
+          <span class="contact" v-if="messages[0] && $route.params.id != 'new'" v-html="$options.filters.nativeEmoji(messages[0].name)"></span>
           <span class="contact" v-else-if="$route.params.id == 'new'" style="overflow: visible;">
             <autocomplete :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
           </span>
@@ -22,7 +22,7 @@
         <simplebar class="messages" ref="messages">
           <div v-for="(msg, i) in sortedMessages" :key="'msg'+msg.id">
             <div class="timegroup" v-html="dateGroup(i-1, i)" v-if="dateGroup(i-1, i) != ''"></div>
-            <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.twemoji(msg.author)"></div>
+            <div v-if="msg.group && msg.sender != 1" class="senderName" v-html="$options.filters.nativeEmoji(msg.author)"></div>
 
             <div :ref="'msg'+msg.id" :class="(msg.sender == 1 ? 'send ' : 'receive ') + msg.type + (sortedMessages.length-1 == i ? ' last' : '')" class="messageGroup">
               <div class="authorAvatar" v-if="msg.group && msg.sender != 1">
@@ -51,7 +51,7 @@
                       </template>
                     </div>
 
-                    <div v-if="$options.filters.twemoji(text.text) != '' || text.undisplayable" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
+                    <div v-if="$options.filters.nativeEmoji(text.text) != '' || text.undisplayable" :id="'msg'+msg.id+'-text'+ii+'-part'+text.attachments.length" class="bubbleWrapper">
                       <reactions :click="() => openReactionMenu(msg.id, ii, text.guid, text.reactions, text.attachments.length, text.balloon)"
                         :target="'#msg'+msg.id+'-text'+ii" :part="text.attachments.length" 
                         :reactions="text.reactions" :targetFromMe="msg.sender == 1" :balloon="text.balloon"></reactions>
@@ -62,9 +62,9 @@
                         :key="'msg'+msg.id+'-text'+ii"
                         :class="{ last: msg.texts.length-1 == ii, jumbo: isEmojis(text.text), payload: text.undisplayable || text.payload }"
                         :style="msg.sender == 1 && text.showStamp && (text.read > 0 || text.delivered > 0) ? 'margin-bottom: 0px;' : ''">
-                        <div class="subject" v-if="text.subject && text.subject != ''" v-html="$options.filters.twemoji(text.subject)"></div>
+                        <div class="subject" v-if="text.subject && text.subject != ''" v-html="$options.filters.nativeEmoji(text.subject)"></div>
 
-                        <span style="white-space: pre-wrap;" v-if="!text.undisplayable && !text.payload" v-html="$options.filters.twemoji(text.text)" v-linkified></span>
+                        <span style="white-space: pre-wrap;" v-if="!text.undisplayable && !text.payload" v-html="$options.filters.nativeEmoji(text.text)" v-linkified></span>
                         <payload-attachment v-else-if="!text.undisplayable && text.payload" :payloadData="text.payload" :loadedData="attachmentLoaded" @refreshRequest="reloadMessage(text.guid)" />
                         <unsupported-message v-else />
                       </div>
@@ -95,27 +95,40 @@
               {{ attachment.name }}
             </div>
           </div>
-          <div class="msgTextboxWrapper">
-            <input type="text" v-model="subjectInput" v-if="$store.state.subjectLine" class="subjectLine" id="subjectInput" ref="subjectLine" placeholder="Subject"
-              @keyup.enter.exact="sendText" @keyup="sendTypingIndicator(subjectInput)" :class="{ noTopBorder: hasAttachments }">
-            <twemoji-textarea @contentChanged="autoResize" :placeholder="this.messages[0] ? this.messages[0].type.replace('SMS', 'Text Message') : 'Send a message'"
-              :emojiData="emojiDataAll"
-              :emojiGroups="emojiGroups"
-              :recentEmojisFeat="true"
-              recentEmojisStorage="local"
-              :searchEmojisFeat="true"
-              :initialContent="messageText[$route.params.id]"
-              :class="(hasAttachments || $store.state.subjectLine) ? 'noTopBorder' : ''"
-              @enterKey="sendText">
-              <template v-slot:twemoji-picker-button>
-                <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26" style="margin-top: -1px;"></feather>
-              </template>
-            </twemoji-textarea>
+          <div class="subjectLine" ref="subjectLine" id="subjectInput"
+            placeholder='Subject'
+            :class="{ noTopBorder: hasAttachments }"
+            @blur="handleBlur"
+            @input="messageInputChanged"
+            @paste="messageInputPasted"
+            @keydown.enter.exact="enterKey"
+            @keydown.shift.enter="shiftEnterKey"
+            contenteditable>
           </div>
-          <img src="@/assets/loading.webp" style="height:26px;float:right;" v-if="!canSend" />
-          <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
-          <div class="sendBtn" :class="{ cantSend: !canSend || !hasDataToSend, SMS: this.messages[0] && this.messages[0].type == 'SMS' }" @click="sendText">
-            <feather type="arrow-up" size="20"></feather>
+          <div class="msgTextboxWrapper">
+            <img src="@/assets/loading.webp" class="uploadButtonContainer" style="height:24px;float:right;" v-if="!canSend" />
+            <upload-button v-show="canSend" ref="uploadButton" :enableiMessageAttachments="this.messages[0] && this.messages[0].type == 'iMessage'" @filesChanged="previewFiles" />
+            
+            <div class="messageInput" ref="messageInput" id="messageInput"
+              :placeholder="this.messages[0] ? this.messages[0].type.replace('SMS', 'Text Message') : 'Send a message'"
+              :class="{ noTopBorder: (hasAttachments || $store.state.subjectLine) }"
+              @blur="handleBlur"
+              @input="messageInputChanged"
+              @paste="messageInputPasted"
+              @keydown.enter.exact="enterKey"
+              @keydown.shift.enter="shiftEnterKey"
+              contenteditable>
+            </div>
+            <div class="sendBtn" :class="{ cantSend: !canSend || !hasDataToSend, SMS: this.messages[0] && this.messages[0].type == 'SMS' }" @click="sendText">
+              <feather type="arrow-up" size="18"></feather>
+            </div>
+            <div class="emojiBtn">
+              <transition name="fade" mode="out-in">
+                <picker :data="emojiIndex" v-if="showEmojiMenu" v-click-outside="hideEmojiMenu" ref="EmojiPicker" :class="{ visible: showEmojiMenu }"
+                  :set='$store.state.emojiSet.toLowerCase()' :native="$store.state.emojiSet == 'Native'" @select="insertEmoji" />
+              </transition>
+              <feather type="smile" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26" @click="toggleEmojiMenu"></feather>
+            </div>
           </div>
         </div>
       </template>
@@ -124,15 +137,10 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import simplebar from 'simplebar-vue'
 import moment from 'moment'
-import {
-  TwemojiTextarea
-} from '@kevinfaguiar/vue-twemoji-picker'
-import EmojiAllData from '@kevinfaguiar/vue-twemoji-picker/emoji-data/en/emoji-all-groups.json'
-import EmojiGroups from '@kevinfaguiar/vue-twemoji-picker/emoji-data/emoji-groups.json'
 import Autocomplete from '@trevoreyre/autocomplete-vue'
-import '@trevoreyre/autocomplete-vue/dist/style.css'
 import VideoPlayer from './VideoPlayer'
 import ExpandableImage from './ExpandableImage'
 import DownloadAttachment from './DownloadAttachment'
@@ -146,12 +154,17 @@ import PayloadAttachment from './PayloadAttachment.vue'
 import Avatar from './Avatar.vue'
 import AudioPlayer from './AudioPlayer.vue'
 import UnsupportedMessage from './UnsupportedMessage.vue'
+import emojiData from 'emoji-mart-vue-fast/data/all.json'
+import { Picker, EmojiIndex } from 'emoji-mart-vue-fast'
+import emojiRegex from 'emoji-regex'
+
+import '@trevoreyre/autocomplete-vue/dist/style.css'
+import 'emoji-mart-vue-fast/css/emoji-mart.css'
 
 export default {
   name: 'Message',
   components: {
     simplebar,
-    TwemojiTextarea,
     Autocomplete,
     VideoPlayer,
     ExpandableImage,
@@ -164,11 +177,13 @@ export default {
     Avatar,
     AudioPlayer,
     UnsupportedMessage,
+    Picker,
   },
   data: function () {
     return {
       messages: [],
       messageText: {},
+      subjectText: {},
       limit: 25,
       offset: 0,
       receiver: '',
@@ -186,29 +201,16 @@ export default {
       reactingMessageReactions: null,
       reactingMessagePart: 0,
       reactingToBalloon: false,
-      subjectInput: '',
-      lastTypingValue: ''
+      lastTypingValue: '',
+      lastTypingStamp: 0,
+      emojiIndex: new EmojiIndex(emojiData),
+      showEmojiMenu: false,
+      lastFocus: null,
+      hasDataToSend: false,
+      reloadingGuid: {}
     }
   },
   computed: {
-    emojiDataAll() {
-      let data = EmojiAllData.filter((obj) => {
-        return true//obj.group != 2
-      })
-      return data
-    },
-    emojiGroups() {
-      let groups = EmojiGroups.filter((obj) => {
-        return true//obj.description != '🦲'
-      })
-      return groups
-    },
-    hasDataToSend() {
-      let messageText = this.messageText[this.$route.params.id] ? this.messageText[this.$route.params.id] : ''
-      let subjectText = this.subjectInput
-
-      return messageText != '' || subjectText != '' || this.hasAttachments
-    },
     sortedMessages() {
       // let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
       let messages = this.messages
@@ -306,22 +308,107 @@ export default {
       this.reactingMessageGUID = null
       this.reactingMessageReactions = null
       this.reactingMessagePart = 0
-      this.subjectInput = ''
+
       if (this.$refs.uploadButton) {
         this.$refs.uploadButton.clear()
       }
-      if (this.$refs.subjectLine) {
-        this.$refs.subjectLine.value = ''
-      }
+      this.lastFocus = null
+      this.reloadingGuid = {}
 
       this.autoCompleteHooks()
       this.fetchMessages()
 
-      var textarea = document.getElementById("twemoji-textarea")
-      if (textarea) textarea.innerHTML = this.$twemoji.parse(this.messageText[this.$route.params.id] || "")
+      if (this.$refs.messageInput) {
+        this.$refs.messageInput.innerHTML = this.messageText[this.$route.params.id] || ''
+      }
+      if (this.$refs.subjectLine) {
+        this.$refs.subjectLine.innerHTML = this.subjectText[this.$route.params.id] || ''
+      }
     }
   },
   methods: {
+    enterKey(e) {
+      e.preventDefault()
+      e.stopPropagation()
+      this.sendText()
+    },
+    shiftEnterKey(e) {
+      e.preventDefault()
+      e.stopPropagation()
+      
+      if (e.target.innerHTML === '' || e.target.innerHTML[e.target.innerHTML.length - 1] !== '\n') {
+        document.execCommand('insertHTML', false, "\n")
+      }
+      document.execCommand('insertHTML', false, "\n")
+    },
+    messageInputPasted(e) {
+      e.preventDefault()
+      e.stopPropagation()
+      let paste = e.clipboardData.getData('text/plain')
+      document.execCommand('insertText', false, paste)
+    },
+    messageInputChanged(e) {
+      let savedPos = this.$rangy.saveSelection()
+      let content = this.$options.filters.nativeEmoji(this.$options.filters.colonEmoji(e.target.innerHTML))
+      e.target.innerHTML = content
+      this.$rangy.restoreSelection(savedPos)
+      
+      let rawContent = this.$options.filters.unescapeHTML(e.target.innerHTML.replace(/<img.*?native="(.*?)"[^\>]+>/g, '$1'))
+      
+      if ($(e.target).hasClass('messageInput')) {
+        // this.$set(this.messageText, this.$route.params.id, rawContent)
+        this.messageText[this.$route.params.id] = rawContent
+      } else if ($(e.target).hasClass('subjectLine')) {
+        // this.$set(this.subjectText, this.$route.params.id, rawContent)
+        this.subjectText[this.$route.params.id] = rawContent
+      }
+
+      this.hasDataToSend = (this.messageText[this.$route.params.id] != '' && this.messageText[this.$route.params.id] != null)
+                        || (this.subjectText[this.$route.params.id] != '' && this.subjectText[this.$route.params.id] != null)
+                        || this.hasAttachments
+
+      this.sendTypingIndicator(rawContent)
+    },
+    handleBlur(e) {
+      if (e.relatedTarget && e.relatedTarget.placeholder == 'Search') return
+      this.lastFocus = { target: $(e.target), selection: window.getSelection().getRangeAt(0) }
+    },
+    insertEmoji(emoji) {
+      if (!this.lastFocus) this.lastFocus = { target: $(this.$refs.messageInput) }
+      if (!this.lastFocus.target) this.lastFocus.target = $(this.$refs.messageInput)
+
+      let emojiComponent = this.$options.filters.emojiComponent(emoji)
+
+      if (this.lastFocus.selection) {
+        this.lastFocus.target.focus()
+        let range = this.lastFocus.selection
+        let node = emojiComponent.get(0)
+        // this.lastFocus.lastSavedPos = this.$rangy.saveSelection()
+        
+        range.insertNode(node)
+        this.lastFocus.selection.setEndAfter(node)
+        this.lastFocus.selection.setStartAfter(node)
+        window.getSelection().getRangeAt(0).setEndAfter(node)
+        window.getSelection().getRangeAt(0).setStartAfter(node)
+        if (this.lastFocus.lastSavedPos) this.$rangy.restoreSelection(this.lastFocus.lastSavedPos)
+      } else {
+        this.lastFocus.target.append(emojiComponent)
+      }
+
+      this.messageInputChanged({ target: this.lastFocus.target.get(0) })
+    },
+    toggleEmojiMenu() {
+      this.showEmojiMenu = !this.showEmojiMenu
+
+      if (this.lastFocus) {
+        this.lastFocus.target.focus()
+        if (this.lastFocus.selection) window.getSelection().collapse(this.lastFocus.selection.startContainer, this.lastFocus.selection.startOffset)
+      }
+    },
+    hideEmojiMenu() {
+      if (!this.showEmojiMenu) return
+      this.showEmojiMenu = false
+    },
     isImage(type) {
       return type.includes('image/')
     },
@@ -417,13 +504,11 @@ export default {
       this.$nextTick(this.autoCompleteHooks)
     },
     isEmojis(msgText) {
-      const regex = /<% RGI_Emoji %>|\p{Emoji_Presentation}|\p{Emoji}\uFE0F|\p{Emoji_Modifier_Base}/gu
-      const variationSelector = /[\u180B-\u180D\uFE00-\uFE0F]|\uDB40[\uDD00-\uDDEF]/gu
-
+      const regex = emojiRegex()
       msgText = msgText.replace(/\u{fffc}/gu, "")
 
-      return msgText.replace(' ', '').replace(regex, '').replace(variationSelector, '').length == 0 
-             && msgText.replace(' ', '').replace(variationSelector, '').length <= 8
+      return msgText.replace(' ', '').replace(regex, '').length == 0 
+             && (msgText.match(regex) || []).length <= 8
              && msgText.replace(' ', '').length != 0
     },
     humanReadableDay (date) {
@@ -489,30 +574,19 @@ export default {
       }
     },
     reloadMessage(guid) {
+      if (this.reloadingGuid[guid]) return
+      
+      this.reloadingGuid[guid] = true
       this.sendSocket({ action: 'getMessageByGUID', data: {
           guid: guid,
         }
       })
     },
-    autoResize (value) {
-      if (value !== false) {
-        this.$set(this.messageText, this.$route.params.id, value)
-        this.sendTypingIndicator(value)
-      }
-
-      var el = document.getElementById('twemoji-textarea')
-      this.$nextTick(() => {
-        let scrollHeight = el.scrollHeight
-        el.style.setProperty('height', '22px', 'important')
-        if (el.scrollHeight > 22) {
-          scrollHeight = el.scrollHeight
-          el.style.setProperty('height', 'auto', 'important')
-        }
-      })
-    },
     sendTypingIndicator(value) {
       if (this.lastTypingValue == value) return
+      if (Date.now() - this.lastTypingStamp <= 55000 && value != '' && this.lastTypingValue != '') return
       this.lastTypingValue = value
+      this.lastTypingStamp = Date.now()
 
       if (value != '') {
         this.sendSocket({ action: 'setIsLocallyTyping', data: {
@@ -546,45 +620,49 @@ export default {
     sendText () {
       if (!this.canSend) return
 
-      let messageText = this.messageText[this.$route.params.id] ? this.messageText[this.$route.params.id] : ''
-      let subjectText = this.$refs.subjectLine ? this.$refs.subjectLine.value : ''
+      let messageText = this.messageText[this.$route.params.id] || ''
+      let subjectText = this.subjectText[this.$route.params.id] || ''
 
       if (messageText == '' && subjectText != '') {
         messageText = subjectText
         subjectText = ''
       }
 
-      if (messageText == '' && (!this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
+      if (messageText == '' && (!this.$refs.uploadButton || !this.$refs.uploadButton.attachments || this.$refs.uploadButton.attachments.length == 0)) return
       this.canSend = false
 
       let textObj = {
         text: messageText,
-        attachments: this.$refs.uploadButton.attachments,
+        attachments: this.$refs.uploadButton ? this.$refs.uploadButton.attachments : [],
         address: this.messages[0] ? this.messages[0].chatId : this.receiver,
         subject: subjectText
       }
-      
-      this.messageText[this.$route.params.id] = ""
 
       axios.post(this.$store.getters.httpURI+'/sendText', textObj)
         .then(response => {
           let focusedEl = $(document.activeElement).attr('id')
+          
           if (this.$refs.uploadButton) {
             this.$refs.uploadButton.clear()
           }
+
           this.$nextTick(() => $('#'+focusedEl).focus())
 
+          this.$set(this.messageText, this.$route.params.id, null)
+          this.$set(this.subjectText, this.$route.params.id, null)
+          if (this.$refs.messageInput) {
+            this.$refs.messageInput.innerHTML = ''
+          }
+          if (this.$refs.subjectLine) {
+            this.$refs.subjectLine.innerHTML = ''
+          }
+
           this.canSend = true
-          this.autoResize(false)
-          this.subjectInput = ''
-          document.getElementById("twemoji-textarea").innerHTML = ""
+          this.hasDataToSend = false
         })
         .catch(error => {
           alert("There was an error while sending your text.\n" + error)
           this.canSend = true
-          this.autoResize(false)
-          this.subjectInput = ''
-          document.getElementById("twemoji-textarea").innerHTML = ""
         })
     },
     scrollToBottom () {
@@ -632,7 +710,6 @@ export default {
     },
     previewFiles () {
       this.hasAttachments = this.$refs.uploadButton && this.$refs.uploadButton.attachments != null && this.$refs.uploadButton.attachments.length > 0
-      this.autoResize(false)
     },
     removeAttachment (i) {
       if (!this.canSend) return
@@ -667,8 +744,7 @@ export default {
 
       this.ignoreNextScroll = true
       this.$nextTick(this.scrollToBottom)
-      let el = document.getElementById('twemoji-textarea')
-      if (el) el.focus()
+      if (this.$refs.messageInput) this.$refs.messageInput.focus()
 
       this.offset += this.limit
       this.loading = false
@@ -677,7 +753,7 @@ export default {
     },
     hookPasteAndDrop () {
       this.$nextTick(() => {
-        var el = document.getElementById('twemoji-textarea')
+        var el = this.$refs.messageInput
         if (el) {
           setTimeout(() => { el.focus() }, 10)
           el.addEventListener('paste', e => {
@@ -705,7 +781,6 @@ export default {
             let sel = window.getSelection()
             sel.collapse(target.lastChild, newText.length)
           }
-          this.autoResize(newText)
         })
       }
 
@@ -771,10 +846,11 @@ export default {
         console.log("Received a message, but content was empty.")
       } else {
         if (this.messages && this.messages.length > 0 && message[0]['personId'] == this.$route.params.id) {
+          this.reloadingGuid[message[0].guid] = null
           let oldMsgIndex = this.messages.findIndex(obj => obj.guid == message[0].guid)
           if (oldMsgIndex != -1) {
             this.messages[oldMsgIndex] = message[0]
-            this.$set(this.messages, oldMsgIndex, message[0]) 
+            this.$set(this.messages, oldMsgIndex, message[0])
             return
           }
 
@@ -782,7 +858,7 @@ export default {
           this.messages.unshift(message[0])
 
           if (this.lastHeight == null) {
-            // this.ignoreNextScroll = true
+            this.ignoreNextScroll = true
             this.$nextTick(this.scrollToBottom)
           }
 
@@ -831,10 +907,264 @@ export default {
 </script>
 
 <style lang="scss">
+.textboxContainer {
+  //position: absolute;
+  bottom: 0;
+  width: 100%;
+  margin-right: 0px;
+  margin-top: 16px;
+
+  [contentEditable=true]:empty:before {
+    content: attr(placeholder);
+    color: #595959;
+  }
+
+  .subjectLine {
+    border:none;
+    background-image: none;
+    background-color: transparent;
+    -webkit-box-shadow: none;
+    -moz-box-shadow: none;
+    box-shadow: none;
+    outline: none;
+
+    display: flex;
+    flex-basis: 100%;
+    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+    margin-left: 34px;
+    width: calc(100% - 90px);
+    background: #1d1d1d !important;
+    border: 1px solid #545454 !important;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    margin-bottom: -1px;
+    font-size: 14px;
+    color: white;
+    padding: 3px 10px;
+    line-height: 16px;
+    font-weight: 500;
+    letter-spacing: 0.25px;
+    white-space: pre-wrap;
+    position: relative;
+
+    &::placeholder {
+      color: lighten(#7E7E7E, 25%);
+    }
+
+    &.noTopBorder {
+      border-top-left-radius: 0px;
+      border-top-right-radius: 0px;
+    }
+  }
+  
+  .msgTextboxWrapper {
+    padding: 6px;
+    padding-top: 0px;
+    display: flex;
+
+    .messageInput {
+      float: left;
+      width: calc(100% - 85px);
+      background: #1d1d1d !important;
+      border: 1px solid #545454 !important;
+      border-radius: 13px;
+      font-size: 13px;
+      line-height: 16px;
+      color: white;
+      outline: none;
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 3px 10px;
+      padding-right: 21px;
+      height: min-content;
+      align-self: flex-end;
+      margin-left: 4px;
+      white-space: pre-wrap;
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      &.noTopBorder {
+        border-top-right-radius: 0px;
+        border-top-left-radius: 0px;
+      }
+    }
+
+    .uploadButtonContainer {
+      width: 24px;
+      height: 24px;
+
+      margin-left: 0px;
+      display: inline-flex;
+      align-self: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .feather {
+      align-self: flex-end;
+      &:hover {
+        filter: brightness(115%);
+      }
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+    }
+
+    .emojiBtn {
+      display: inline-flex;
+      align-self: flex-end;
+      margin-left: 4px;
+
+      .emoji-mart {
+        position: absolute;
+        right: 4px;
+        bottom: 32px;
+        background-color: rgba(35,35,35,0.8);
+        backdrop-filter: blur(0px);
+        border-color: rgba(0,0,0,0.5);
+        z-index: 99999999;
+        font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
+
+        &.visible:not(.fade-leave-active) {
+          backdrop-filter: blur(2px);
+        }
+
+        & * {
+          line-height: 0.7;
+        }
+
+        &-scroll {
+          margin-right: 2px;
+
+          &::-webkit-scrollbar {
+            width: 8px;
+          }
+          &::-webkit-scrollbar-thumb {
+            background-color: #424241;
+            border-radius: 16px;
+          }
+          &::-webkit-scrollbar-track {
+              background-color: transparent;
+          }
+        }
+
+        &-bar {
+          border-color: rgba(0,0,0,0.5);
+        }
+
+        &-search {
+          margin-bottom: 6px;
+
+          input {
+            background-color: rgba(200, 200, 200, 0.1);
+            border-color: rgba(87, 87, 87, 0.7);
+            color: white;
+          }
+        }
+
+        &-category-label {
+          span {
+            font-weight: 300;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #A0A1A1;
+            background-color: transparent;
+          }
+        }
+
+        &-anchor {
+          cursor: pointer;
+          
+          &-selected {
+            color: #1FB3FF !important;
+          }
+
+          &-bar {
+            background-color: #1FB3FF !important;
+          }
+        }
+
+        &-emoji {
+          cursor: pointer;
+          span { cursor: pointer; }
+          &:before {
+            background-color: rgba(255,255,255,0.1);
+          }
+        }
+
+        &-preview {
+          height: 24px;
+
+          &-emoji, &-name, &-emoticons {
+            display: none;
+          }
+          &-data {
+            left: 8px;
+
+            .emoji-mart-title-label {
+              display: none;
+            }
+          }
+          &-skins {
+            right: 8px;
+
+            .emoji-mart-skin-swatches {
+              background-color: rgb(90,90,90);
+              border-color: rgb(35,35,35);
+            }
+          }
+        }
+      }
+    }
+
+    .sendBtn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #1287FF;
+      cursor: pointer;
+      margin-right: 2px;
+      margin-left: -22px;
+      margin-top: 0px;
+      align-self: center;
+
+      &.SMS {
+        background: #35CC5B;
+      }
+
+      svg {
+        stroke: rgb(255,255,255);
+        cursor: initial;
+        width: 20px;
+        height: 20px;
+      }
+
+      &.cantSend {
+        filter: brightness(40%);
+        cursor: initial;
+
+        svg, .feather {
+          cursor: initial;
+        }
+      }
+
+      &:not(.cantSend) {
+        .feather {
+          cursor: pointer;
+        }
+        &:hover {
+          filter: brightness(115%);
+        }
+      }
+    }
+  }
+}
+
 .attachmentPreview {
   border: 1px solid #545454;
-  margin-left: 32px;
-  margin-right: 58px;
+  margin-left: 34px;
+  margin-right: 34px;
   margin-bottom: -1px;
   border-top-left-radius: 14px;
   border-top-right-radius: 14px;
@@ -904,291 +1234,6 @@ export default {
     -webkit-box-shadow: none !important;
     -moz-box-shadow: none !important;
     box-shadow: none !important;
-  }
-}
-
-.msgTextboxWrapper {
-  .subjectLine {
-    border:none;
-    background-image: none;
-    background-color: transparent;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
-    box-shadow: none;
-    outline: none;
-
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
-    margin-left: 32px;
-    width: calc(100% - 112px);
-    background: #1d1d1d !important;
-    border: 1px solid #545454 !important;
-    border-top-left-radius: 14px;
-    border-top-right-radius: 14px;
-    margin-bottom: -1px;
-    color: white;
-    padding-left: 10px;
-    padding-right: 10px;
-    line-height: 20px;
-    font-weight: 500;
-    letter-spacing: 0.25px;
-
-    &::placeholder {
-      color: lighten(#7E7E7E, 25%);
-    }
-
-    &.noTopBorder {
-      border-top-left-radius: 0px;
-      border-top-right-radius: 0px;
-    }
-  }
-}
-
-#twemoji-textarea-outer {
-  background-color: transparent !important;
-  width: calc(100% - 52px);
-  float: left;
-
-  #twemoji-textarea {
-    overflow: auto;
-    outline: none;
-    -webkit-box-shadow: none;
-    -moz-box-shadow: none;
-    box-shadow: none;
-    resize: none;
-    padding: 0 !important;
-    margin: 0 !important;
-
-    font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
-    font-weight: 300 !important;
-    min-height: 22px !important;
-    max-height: 100px !important;
-    height: 22px !important;
-    flex-grow: 90;
-    border-radius: 14px !important;
-    padding-left: 10px !important;
-    padding-right: 10px !important;
-    background: rgba(29,29,29, 1) !important;
-    border: 1px solid #545454 !important;
-    line-height: 22px !important;
-    font-size: 13px !important;
-    margin-left: 6px !important;
-    margin-right: 6px !important;
-    overflow-x: hidden;
-
-    .emoji {
-      width: 15px !important;
-      height: 15px !important;
-      vertical-align: 0 !important;
-    }
-  }
-
-  &.noTopBorder {
-    #twemoji-textarea {
-      border-top-right-radius: 0px !important;
-      border-top-left-radius: 0px !important;
-    }
-  }
-
-  #emoji-popup {
-    width: calc(100% - 7px) !important;
-    border: none !important;
-
-    .emoji-popover-inner {
-      width: auto !important;
-      height: 170px !important;
-      background: none !important;
-    }
-  }
-}
-
-#popper-container {
-  position: fixed !important;
-  bottom: 0px !important; left: -6px !important;
-  z-index: 1 !important;
-  border: 1px solid #555555 !important;
-  width: 310px !important;
-  height: 250px !important;
-  padding-right: 0 !important;
-  padding-left: 0 !important;
-  box-sizing: border-box !important;
-  border-radius: 0.5rem !important;
-  background-color: rgba(40,40,40, 0.7) !important;
-  backdrop-filter: blur(4px) !important;
-
-  .emoji {
-    width: 16px !important;
-    height: 16px !important;
-    top: 0.2em !important;
-  }
-
-  #arrow {
-    bottom: -14px !important;
-    left: 8px !important;
-    height: 14px !important;
-    width: 20px !important;
-    padding: 0 !important;
-    overflow: hidden;
-    transform: rotate(180deg) !important;
-    // top:
-    &:before {
-      height: 100% !important;
-      width: calc(100% - 6px) !important;
-      margin-top: 7px !important;
-      margin-left: 2px !important;
-      background: rgba(40,40,40, 0.8) !important;//rgba(40,40,40, 0.8) !important;
-      border: 1px solid #555555;
-    }
-  }
-
-  #emoji-container {
-    #emoji-popover-search {
-      background-color: rgb(50,50,50) !important;
-      margin: 0 !important;
-
-      #search-header {
-        border: none !important;
-        border-radius: 6px !important;
-
-        &.is-focused {
-          background-color: rgb(75,75,75) !important;
-        }
-
-        input {
-          padding: 5px 5px !important;
-          color: white;
-          font-size: 14px !important;
-        }
-      }
-    }
-
-    #emoji-popover-header {
-      padding: 5px !important;
-      padding-top: 0px !important;
-      padding-bottom: 15px !important;
-      border-bottom: 1px solid lighten(#555, 30%) !important;
-    }
-
-    .emoji-tab.active, .emoji-tab:hover {
-      padding-bottom: 12px !important;
-      border-bottom: 2px solid lighten(#555, 10%) !important;
-    }
-
-    .emoji-tab {
-      max-height: 26px !important;
-      padding: 0px 5px !important;
-      border-radius: 0px !important;
-      margin-top: 0px !important;
-    }
-
-    .emoji-list {
-      padding-top: 6px !important;
-
-      span {
-        width: 20px !important;
-        padding-bottom: 6px !important;
-
-        &:hover {
-          background: lighten(#555, 10%) !important;
-        }
-      }
-    }
-  }
-}
-
-.textboxContainer #emoji-container > #emoji-popup #emoji-popover-search > #search-header > span {
-  width: 2px !important;
-  padding: 0px 10px;
-  margin-top: -2px;
-}
-
-.emoji-picker__search {
-  display: flex;
-}
-
-.emoji-picker h5 {
-  margin-bottom: 0;
-  color: #b1b1b1;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  cursor: default;
-}
-
-.emoji-picker .emojis {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-}
-
-.emoji-picker .emojis:after {
-  content: "";
-  flex: auto;
-}
-
-.emoji-picker .emojis span {
-  padding: 0.2rem;
-  cursor: pointer;
-  border-radius: 5px;
-}
-
-.emoji-picker .emojis span:hover {
-  background: #ececec;
-  cursor: pointer;
-}
-
-.emoji-picker__search {
-  width: 100%;
-}
-
-.textboxContainer {
-  //position: absolute;
-  bottom: 0;
-  padding: 10px;
-  padding-bottom: 4px;
-  width: calc(100% - 20px);
-  margin-right: 0px;
-
-  .feather {
-    &:hover {
-      filter: brightness(115%);
-    }
-    cursor: pointer;
-  }
-
-  .sendBtn {
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    background: #1287FF;
-    margin-left: -20px;
-    float: right;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    margin-right: 4px;
-
-    &.SMS {
-      background: #35CC5B;
-    }
-
-    svg {
-      stroke: rgb(255,255,255);
-      cursor: initial;
-    }
-
-    &.cantSend {
-      filter: brightness(40%);
-      cursor: initial;
-    }
-
-    &:not(.cantSend) {
-      .feather {
-        cursor: pointer;
-      }
-      &:hover {
-        filter: brightness(115%);
-      }
-    }
   }
 }
 
@@ -1440,11 +1485,15 @@ export default {
 
     &.jumbo {
       padding-left: 0;
+      padding-bottom: 0;
       background: transparent;
-      .emoji {
-        width: 38px;
-        padding: 0px 2px;
+      font-size: 42px;
+
+      .text-emoji {
+        width: 42px;
+        height: 42px;
       }
+      
       &:before, &:after {
         background: transparent;
       }
@@ -1504,11 +1553,15 @@ export default {
 
     &.jumbo {
       padding-right: 0;
+      padding-bottom: 0;
       background: transparent !important;
-      .emoji {
-        width: 38px;
-        padding: 0px 2px;
+      font-size: 42px;
+
+      .text-emoji {
+        width: 42px;
+        height: 42px;
       }
+      
       &:before, &:after {
         background: transparent !important;
       }

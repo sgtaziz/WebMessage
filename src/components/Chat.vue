@@ -14,7 +14,7 @@
       <div class="chatContent">
         <div class="title">
           <span class="author">
-            <span class="name" v-html="$options.filters.twemoji(author)"></span>
+            <span class="name" v-html="$options.filters.nativeEmoji(author)"></span>
             <span v-if="showNum" class="number"> ({{ chatid }})</span>
             <feather type="bell-off" stroke="rgb(85,85,85)" size="13" v-if="$store.state.mutedChats.includes(chatid)"></feather>
           </span>
@@ -61,7 +61,7 @@ export default {
   },
   computed: {
     trimmedText() {
-      let text = this.$options.filters.twemoji(this.text)
+      let text = this.$options.filters.nativeEmoji(this.text)
       if (text == '' && this.text.includes("￼")) { //This looks empty, but there is a unicode character in there (U+FFFC)
         return "<i>Attachment</i>"
       }

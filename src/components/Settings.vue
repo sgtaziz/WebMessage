@@ -8,6 +8,7 @@
         <h3>Settings</h3>
           <div class="selectors">
             <div class="selector" :class="{ active: activeView == 'tweak'}" @click="activeView = 'tweak'">Tweak</div>
+            <div class="selector" :class="{ active: activeView == 'conversations'}" @click="activeView = 'conversations'">Conversations</div>
             <div class="selector" :class="{ active: activeView == 'client'}" @click="activeView = 'client'">Client</div>
           </div>
           <div class="settingsWrapper">
@@ -24,7 +25,7 @@
                 <div>Enable SSL</div>
               </label>
             </div>
-            <div class="settingsColumn" v-if="activeView == 'client'">
+            <div class="settingsColumn" v-else-if="activeView == 'conversations'">
               <label class="switch">
                 <input type="checkbox" v-model="subjectLine">
                 <i></i>
@@ -34,6 +35,18 @@
                 <input type="checkbox" v-model="transcode">
                 <i></i>
                 <div>Convert Apple formats <span style="font-size: 12px;">(mov, heic, caf)</span></div>
+              </label>
+            </div>
+            <div class="settingsColumn" v-if="activeView == 'client'">
+              <label class="select">
+                <div>Emoji style:</div>
+                <select v-model="emojiSet">
+                  <option>Apple</option>
+                  <option>Google</option>
+                  <option>Twitter</option>
+                  <option>Facebook</option>
+                  <option>Native</option>
+                </select>
               </label>
               <label class="switch">
                 <input type="checkbox" v-model="systemSound">
@@ -46,7 +59,7 @@
                 <div>Precache messages <span style="color: rgba(255,0,0,0.8);font-size: 12px;">More battery drain</span></div>
               </label>
               <label class="switch">
-                <input type="checkbox" v-model="startup">
+                <input type="checkbox" v-model="launchOnStartup">
                 <i></i>
                 <div>Launch on startup</div>
               </label>
@@ -115,6 +128,7 @@ export default {
       enableTunnel: false,
       cacheMessages: false,
       notifSound: 'wm-audio://receivedText.mp3',
+      emojiSet: 'Twitter',
       activeView: 'tweak'
     }
   },
@@ -197,12 +211,13 @@ export default {
       this.$store.commit('setSubjectLine', this.subjectLine)
       this.$store.commit('setTranscode', this.transcode)
       this.$store.commit('setSystemSound', this.systemSound)
-      this.$store.commit('setStartup', this.startup)
+      this.$store.commit('setStartup', this.launchOnStartup)
       this.$store.commit('setMinimize', this.minimize)
       this.$store.commit('setMacStyle', this.macstyle)
       this.$store.commit('setAcceleration', this.acceleration)
       this.$store.commit('setCacheMessages', this.cacheMessages)
       this.$store.commit('setNotifSound', this.notifSound)
+      this.$store.commit('setEmojiSet', this.emojiSet)
       this.show = false
       if (this.enableTunnel) {
         this.initTunnel()
@@ -228,13 +243,14 @@ export default {
       this.subjectLine = this.$store.state.subjectLine
       this.transcode = this.$store.state.transcode
       this.systemSound = this.$store.state.systemSound
-      this.startup = this.$store.state.startup
+      this.launchOnStartup = this.$store.state.launchOnStartup
       this.minimize = this.$store.state.minimize
       this.macstyle = this.$store.state.macstyle
       this.acceleration = this.$store.state.acceleration
       this.enableTunnel = this.$store.state.enableTunnel
       this.cacheMessages = this.$store.state.cacheMessages
       this.notifSound = this.$store.state.notifSound
+      this.emojiSet = this.$store.state.emojiSet
       if (this.enableTunnel) {
         this.initTunnel()
       }
@@ -522,6 +538,39 @@ label.file {
 
     &:hover {
       filter: brightness(85%);
+    }
+  }
+}
+
+label.select {
+  display: flex;
+  padding-left: 8px;
+  margin-bottom: 10px;
+  align-items: center;
+
+  div {
+    padding-right: 8px;
+  }
+
+  select {
+    appearance: none;
+    height: auto;
+    height: inherit;
+    font-size: 13px;
+    padding: 6px 6px;
+    width: calc(100% - 88px);
+    outline: none;
+    border: 1px solid rgb(213, 213, 213);
+    -webkit-app-region: no-drag;
+    background-color: rgba(200, 200, 200, 0.1);
+    color: #EBECEC;
+    border-radius: 0.5em;
+
+    &:focus {
+      border-radius: 0.25px;
+      box-shadow: 0px 0px 0px 3.5px rgba(23, 101, 144, 1);
+      animation: showFocus .3s;
+      border-color: rgb(122, 167, 221) !important;
     }
   }
 }

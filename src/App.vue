@@ -504,6 +504,14 @@ export default {
 </script>
 
 <style lang="scss">
+.text-emoji {
+  width: 16px;
+  height: 16px;
+  margin-top: -2px;
+  margin-bottom: -3px;
+  // margin-right: 1px;
+}
+
 .confirmDialog {
   .vc-container {
     background-color: rgba(45,45,45, 0.9);
@@ -666,11 +674,11 @@ body {
 }
 
 .fade-enter-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, backdrop-filter 0.2s ease;
 }
 
 .fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease, backdrop-filter 0.2s ease;
   opacity: 0;
 }
 

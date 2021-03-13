@@ -18,7 +18,7 @@ export default new Vuex.Store({
     subjectLine: persistentStore.get('subjectLine', false),
     transcode: persistentStore.get('transcode', true),
     systemSound: persistentStore.get('systemSound', false),
-    startup: persistentStore.get('startup', false),
+    launchOnStartup: persistentStore.get('launchOnStartup', false),
     minimize: persistentStore.get('minimize', true),
     macstyle: persistentStore.get('macstyle', true),
     acceleration: persistentStore.get('acceleration', true),
@@ -27,6 +27,7 @@ export default new Vuex.Store({
     cacheMessages: persistentStore.get('cacheMessages', false),
     mutedChats: persistentStore.get('mutedChats', []),
     notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3'),
+    emojiSet: persistentStore.get('emojiSet', 'Twitter'),
     isTyping: {},
     isTypingTimer: {}
   },
@@ -64,9 +65,9 @@ export default new Vuex.Store({
       state['systemSound'] = systemSound
       persistentStore.set('systemSound', systemSound)
     },
-    setStartup(state, startup) {
-      state['startup'] = startup
-      persistentStore.set('startup', startup)
+    setStartup(state, launchOnStartup) {
+      state['launchOnStartup'] = launchOnStartup
+      persistentStore.set('launchOnStartup', launchOnStartup)
       ipcRenderer.send('startup_check')
     },
     setMinimize(state, minimize) {
@@ -88,6 +89,10 @@ export default new Vuex.Store({
     setNotifSound(state, notifSound) {
       state['notifSound'] = notifSound
       persistentStore.set('notifSound', notifSound)
+    },
+    setEmojiSet(state, emojiSet) {
+      state['emojiSet'] = emojiSet
+      persistentStore.set('emojiSet', emojiSet)
     },
     setCacheMessages(state, cacheMessages) {
       state['cacheMessages'] = cacheMessages

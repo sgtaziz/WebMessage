@@ -3,7 +3,7 @@
 <template>
   <div class="vue-avatar--wrapper" :style="[style, customStyle]" aria-hidden="true">
     <!-- this img is not displayed; it is used to detect failure-to-load of div background image -->
-    <img v-if="this.isImage" style="display: none" :src="this.src" @error="onImgError"/>
+    <img v-if="this.isImage" class='avatar' :src="this.src" @error="onImgError"/>
     <span v-show="!this.isImage">{{ userInitial }}</span>
   </div>
 </template>
@@ -72,23 +72,14 @@ export default {
         height: `${this.size}px`,
         borderRadius: this.rounded ? '50%' : 0,
         lineHeight: `${(this.size + Math.floor(this.size / 20)) - 1}px`,
-        paddingLeft: '0.5px',
         fontWeight: '500',
         alignItems: 'center',
         justifyContent: 'center',
         textAlign: 'center',
-        userSelect: 'none'
-      }
-      const imgBackgroundAndFontStyle = {
-        background: `transparent url('${this.src}') no-repeat scroll 0% 0% / ${this.size}px ${this.size}px content-box border-box`
-      }
-      const initialBackgroundAndFontStyle = {
+        userSelect: 'none',
         background: 'linear-gradient(#6C6C6C, #474747)'
       }
-      const backgroundAndFontStyle = (this.isImage)
-        ? imgBackgroundAndFontStyle
-        : initialBackgroundAndFontStyle
-      Object.assign(style, backgroundAndFontStyle)
+      
       return style
     },
     userInitial () {

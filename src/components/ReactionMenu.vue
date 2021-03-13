@@ -4,7 +4,15 @@
       <div class="backdrop" @click="closeMenu">
       </div>
       <div class="menu" :style="{ top: position.top, left: position.left, right: position.right, bottom: position.bottom }" :class=" direction ">
-        <font-awesome-icon @click="sendReaction(icon)" v-for="icon in icons" :key="icon.name" :icon="icon.name" :class="{ active: activeReactions.includes(icon.id) }" size="3x" />
+        <template v-for="icon in icons">
+          <font-awesome-icon v-if="icon.name != 'exclamation'" :key="icon.name" @click="sendReaction(icon)" :icon="icon.name" :class="{ active: activeReactions.includes(icon.id) }" :style="icon.style" size="lg" />
+          <font-awesome-layers v-else class="fa-lg" :key="icon.name" @click="sendReaction(icon)" :class="{ active: activeReactions.includes(icon.id) }">
+            <font-awesome-icon :icon="icon.name" size="lg" transform="left-3 down-1 shrink-1 rotate-355" />
+            <font-awesome-icon :icon="icon.name" size="lg" transform="right-3 rotate-4" />
+          </font-awesome-layers>
+        </template>
+        
+        
       </div>
     </div>
   </transition>
@@ -17,9 +25,9 @@ export default {
   data() {
     return {
       icons: [
-        { name: 'heart', id: 2000 },
+        { name: 'heart', id: 2000, style: { color: '#FA5C99' } },
         { name: 'thumbs-up', id: 2001 },
-        { name: 'thumbs-down', id: 2002 },
+        { name: 'thumbs-down', id: 2002, style: { transform: 'scaleX(-1)'} },
         { name: 'laugh-squint', id: 2003 },
         { name: 'exclamation', id: 2004 },
         { name: 'question', id: 2005 },
@@ -118,6 +126,18 @@ export default {
       this.$emit('close')
     }
   },
+  socket: {
+    newMessage () {
+      this.$nextTick(() => {
+        this.adjustPostion()
+      })
+    },
+    setTypingIndicator () {
+      this.$nextTick(() => {
+        this.adjustPostion()
+      })
+    }
+  }
 }
 </script>
 
@@ -152,7 +172,7 @@ export default {
     color: rgb(140,140,140);
     z-index: 1;
 
-    svg {
+    & > svg {
       padding: 8px;
       border-radius: 50%;
       width: 18px;
@@ -161,6 +181,31 @@ export default {
       text-align: center;
       vertical-align: middle;
       cursor: pointer;
+
+      &:hover {
+        background-color: rgba(0,0,0,0.2);
+      }
+
+      &.active {
+        background-color: #2484FF;
+        color: white;
+      }
+    }
+
+    .fa-layers {
+      padding: 8px;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      line-height: 18px;
+      text-align: center;
+      vertical-align: middle;
+      cursor: pointer;
+
+      & > svg {
+        width: 0.7em;
+        height: 0.7em;
+      }
 
       &:hover {
         background-color: rgba(0,0,0,0.2);

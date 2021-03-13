@@ -1,6 +1,6 @@
 <template>
   <div class="uploadButtonContainer" @click="clicked">
-    <feather type="paperclip" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="26"></feather>
+    <feather type="paperclip" fill="rgb(152,152,152)" stroke="rgb(29,29,29)" size="24"></feather>
     <div class="progressContainer" v-if="isReading">
       <div class="progress" :style="`width:${progress}%;`"></div>
     </div>
