@@ -3,6 +3,7 @@ node_modules
 /dist
 /vender
 electron-builder.yml
+src/temp
 
 # local env files
 .env.local

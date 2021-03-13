@@ -572,6 +572,10 @@ label.select {
       animation: showFocus .3s;
       border-color: rgb(122, 167, 221) !important;
     }
+
+    option {
+      background-color: #373737;
+    }
   }
 }
 

@@ -1,7 +1,8 @@
 'use strict'
 
-import { app, protocol, BrowserWindow, ipcMain, Tray, Menu } from 'electron'
+import { app, protocol, BrowserWindow, ipcMain, Tray, Menu, dialog } from 'electron'
 import { createProtocol } from 'vue-cli-plugin-electron-builder/lib'
+import axios from 'axios'
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const path = require('path')
 const contextMenu = require('electron-context-menu')
@@ -114,15 +115,38 @@ async function createWindow() {
   win.webContents.send('win_id', win.id)
 
   win.webContents.session.on('will-download', (event, item, webContents) => {
-    item.on('updated', (event, state) => {
-      if (state === 'interrupted') {
-        console.log('Download is interrupted but can be resumed')
-      } else if (state === 'progressing') {
-        win.setProgressBar(item.getReceivedBytes()/item.getTotalBytes())
-      }
-    })
-    item.once('done', (event, state) => {
-      win.setProgressBar(-1)
+    event.preventDefault()
+    const fs = require('fs')
+    let extension = item.getFilename().split('.').pop()
+    let itemURL = item.getURL()
+
+    dialog.showSaveDialog({ defaultPath: item.getFilename(), filters: [{ name: extension, extensions: [extension] }] }).then(({ canceled, filePath }) => {
+      if (canceled || !filePath) return
+      const writer = fs.createWriteStream(filePath)
+
+      axios({
+        method: 'GET',
+        url: itemURL,
+        responseType: 'stream',
+        httpsAgent: new require('https').Agent({ rejectUnauthorized: false })
+      }).then(({ data, headers }) => {
+        let totalBytes = headers['content-length']
+        let downloadedBytes = 0
+        win.setProgressBar(0.01)
+
+        data.on('data', (chunk) => {
+          downloadedBytes += Buffer.byteLength(chunk)
+          win.setProgressBar(downloadedBytes / totalBytes)
+        })
+
+        data.on('end', () => {
+          setTimeout(() => {
+            win.setProgressBar(-1)
+          }, 500)
+        })
+
+        data.pipe(writer)
+      })
     })
   })
 }
@@ -168,7 +192,8 @@ app.on('activate', () => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
   if (process.platform === 'win32') {
-    app.setAppUserModelId("com.sgtaziz.WebMessage");
+    const appId = 'com.sgtaziz.WebMessage'
+    app.setAppUserModelId(appId)
   }
 
   if (isDevelopment && !process.env.IS_TEST) {
@@ -212,6 +237,12 @@ ipcMain.on('loaded', (event) => {
   win.webContents.send('win_id', win.id)
   registerShortcuts()
 })
+
+// ipcMain.on('notification', (event, opts) => {
+//   Notifier.notify("hello??")
+//   Notifier.notify(opts)
+//   console.log("notifying with", opts)
+// })
 
 ipcMain.on('rightClickMessage', (event, args) => {
   rightClickedMessage = args
@@ -325,6 +356,7 @@ function registerLocalAudioProtocol () {
       )
     }
   })
+
   protocol.registerFileProtocol('local-file', (request, callback) => {
     const url = request.url.replace(/^local-file:\/\//, '')
     // Decode URL to prevent errors when loading filenames with UTF-8 chars or chars like "#"
@@ -337,6 +369,10 @@ function registerLocalAudioProtocol () {
         error
       )
     }
+  })
+  
+  protocol.registerHttpProtocol('WebMessage', (request, callback) => {
+
   })
 }
 

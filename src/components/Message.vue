@@ -95,7 +95,7 @@
               {{ attachment.name }}
             </div>
           </div>
-          <div class="subjectLine" ref="subjectLine" id="subjectInput"
+          <div class="subjectLine" ref="subjectLine" id="subjectInput" v-if="$store.state.subjectLine"
             placeholder='Subject'
             :class="{ noTopBorder: hasAttachments }"
             @blur="handleBlur"
@@ -704,12 +704,15 @@ export default {
         this.receiver = input
         this.hookPasteAndDrop()
       } else if (/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(input)) {
-        this.receiver = input
+        this.receivfoer = input
         this.hookPasteAndDrop()
       }
     },
     previewFiles () {
       this.hasAttachments = this.$refs.uploadButton && this.$refs.uploadButton.attachments != null && this.$refs.uploadButton.attachments.length > 0
+      this.hasDataToSend = (this.messageText[this.$route.params.id] != '' && this.messageText[this.$route.params.id] != null)
+                        || (this.subjectText[this.$route.params.id] != '' && this.subjectText[this.$route.params.id] != null)
+                        || this.hasAttachments
     },
     removeAttachment (i) {
       if (!this.canSend) return

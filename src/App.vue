@@ -64,6 +64,8 @@ import Chat from './components/Chat.vue'
 import Settings from "./components/Settings.vue"
 import simplebar from 'simplebar-vue'
 import 'simplebar/dist/simplebar.css'
+import Notifier from 'node-notifier'
+import axios from 'axios'
 
 export default {
   name: 'App',
@@ -365,32 +367,50 @@ export default {
         if (messageData.sender != 1 && remote.Notification.isSupported()) {
           if (this.$store.state.mutedChats.includes(messageData.personId)) return
           if (this.lastNotificationGUID == messageData.guid) return
+          if (this.$route.params.id == messageData.personId && document.hasFocus()) return
+
           let body = messageData.text.replace(/\u{fffc}/gu, "")
           if (messageData.group && messageData.group.startsWith('chat')) {
             body = `${messageData.author}: ${body}`
           }
           this.lastNotificationGUID = messageData.guid
           
-          const notification = {
+          const notificationOptions = {
+            appID: 'com.sgtaziz.WebMessage',
             title: messageData.name,
-            body: body == '' ? 'Attachment' : body,
-            silent: !this.$store.state.systemSound
+            message: body == '' ? 'Attachment' : body,
+            sound: this.$store.state.systemSound
           }
 
-          if (process.platform === 'win32') {
-            notification.icon = __static + '/icon.png'
+          if (document.hasFocus()) return
+
+          let tempDir = path.join(__dirname, 'temp')
+          if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir)
           }
 
-          if (!this.$store.state.systemSound) this.notifSound.play()
-          let notif = new remote.Notification(notification)
-          
-          notif.on('click', (event, arg) => {
-            if (chatData && chatData.id) {
-              ipcRenderer.send('show_win')
-              this.$router.push('/message/'+messageData.personId)
-            }
+          const download = require('image-downloader')
+          const fileDir = path.join(tempDir, `avatar_${messageData.authorDocid}.jpg`)
+          const dlOptions = {
+            url: `${this.$store.getters.httpURI}/contactimg?docid=${messageData.authorDocid}&auth=${encodeURIComponent(this.$store.state.password)}`,
+            dest: fileDir,
+            agent: new require('https').Agent({ rejectUnauthorized: false })
+          }
+
+          download.image(dlOptions).then((resp) => {
+            notificationOptions.icon = fileDir
+            if (fs.statSync(fileDir).size == 0) throw Error('Empty image')
+          }).catch((err) => {
+            notificationOptions.icon = notificationOptions.icon = __static + '/icon.png'
+          }).finally(() => {
+            if (!this.$store.state.systemSound) this.notifSound.play()
+            Notifier.notify(notificationOptions, (err, resp, metadata)=> {
+              if (chatData && chatData.id) {
+                ipcRenderer.send('show_win')
+                this.$router.push('/message/'+messageData.personId)
+              }
+            })
           })
-          notif.show()
         } else if (messageData.sender != 1) {
           console.log('Notifications are not supported on this system.')
         }
@@ -420,28 +440,45 @@ export default {
         let reaction = reactions[0]
         if (this.$store.state.mutedChats.includes(reaction.personId)) return
         if (this.lastNotificationGUID == reaction.guid) return
+        if (this.$route.params.id == reaction.personId && document.hasFocus()) return
         this.lastNotificationGUID = reaction.guid
-        
-        const notification = {
-          title: chatData.author,
-          body: chatData.text.replace(/\u{fffc}/gu, ""),
-          silent: !this.$store.state.systemSound
+        console.log(reaction)
+        const notificationOptions = {
+          appID: 'com.sgtaziz.WebMessage',
+          title: reaction.name,
+          message: reaction.text.replace(/\u{fffc}/gu, ""),
+          sound: this.$store.state.systemSound
         }
 
-        if (process.platform === 'win32') {
-          notification.icon = __static + '/icon.png'
+        if (document.hasFocus()) return
+
+        let tempDir = path.join(__dirname, 'temp')
+        if (!fs.existsSync(tempDir)) {
+          fs.mkdirSync(tempDir)
         }
 
-        if (!this.$store.state.systemSound) this.notifSound.play()
-        let notif = new remote.Notification(notification)
-        
-        notif.on('click', (event, arg) => {
-          if (chatData && chatData.id) {
-            ipcRenderer.send('show_win')
-            this.$router.push('/message/'+reaction.personId)
-          }
+        const download = require('image-downloader')
+        const fileDir = path.join(tempDir, `avatar_${reaction.authorDocid}.jpg`)
+        const dlOptions = {
+          url: `${this.$store.getters.httpURI}/contactimg?docid=${reaction.authorDocid}&auth=${encodeURIComponent(this.$store.state.password)}`,
+          dest: fileDir,
+          agent: new require('https').Agent({ rejectUnauthorized: false })
+        }
+
+        download.image(dlOptions).then((resp) => {
+          notificationOptions.icon = fileDir
+          if (fs.statSync(fileDir).size == 0) throw Error('Empty image')
+        }).catch((err) => {
+          notificationOptions.icon = notificationOptions.icon = __static + '/icon.png'
+        }).finally(() => {
+          if (!this.$store.state.systemSound) this.notifSound.play()
+          Notifier.notify(notificationOptions, (err, resp, metadata)=> {
+            if (chatData && chatData.id) {
+              ipcRenderer.send('show_win')
+              this.$router.push('/message/'+reaction.personId)
+            }
+          })
         })
-        notif.show()
       } else if (reactions && reactions.length > 0 && reactions[0].sender != 1) {
         console.log('Notifications are not supported on this system.')
       }

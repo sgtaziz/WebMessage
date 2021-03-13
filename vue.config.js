@@ -1,6 +1,10 @@
 module.exports = {
   configureWebpack: {
-    target: "electron-renderer"
+    target: "electron-renderer",
+    node: {
+      __filename: true,
+      __dirname: true
+    }
   },
   pluginOptions: {
     electronBuilder: {
