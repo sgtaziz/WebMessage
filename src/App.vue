@@ -293,6 +293,24 @@ export default {
           }
         })
       })
+    },
+    sendElectronNotification (options, messageData, chatData) {
+      const notification = {
+        title: options.title,
+        body: options.message,
+        silent: !options.sound
+      }
+      
+      let notif = new remote.Notification(notification)
+      
+      notif.on('click', (event, arg) => {
+        if (chatData && chatData.id) {
+          ipcRenderer.send('show_win')
+          this.$router.push('/message/'+messageData.personId)
+        }
+      })
+      
+      notif.show()
     }
   },
   beforeDestroy () {
@@ -426,7 +444,8 @@ export default {
           }
 
           if (document.hasFocus()) return
-          this.sendNotifierNotification(notificationOptions, messageData, chatData)
+          // this.sendNotifierNotification(notificationOptions, messageData, chatData)
+          this.sendElectronNotification(notificationOptions, messageData, chatData)
         } else if (messageData.sender != 1) {
           console.log('Notifications are not supported on this system.')
         }
@@ -467,7 +486,8 @@ export default {
         }
 
         if (document.hasFocus()) return
-        this.sendNotifierNotification(notificationOptions, reaction, chatData)
+        // this.sendNotifierNotification(notificationOptions, reaction, chatData)
+        this.sendElectronNotification(notificationOptions, reaction, chatData)
       } else if (reactions && reactions.length > 0 && reactions[0].sender != 1) {
         console.log('Notifications are not supported on this system.')
       }

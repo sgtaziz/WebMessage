@@ -212,8 +212,8 @@ export default {
   },
   computed: {
     sortedMessages() {
-      let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
-      // let messages = this.messages
+      // let messages = this.messages.sort((a, b) => (b.date - a.date > 0 ? 1 : -1))
+      let messages = this.messages
       let lastSentMessageFound = false
       let lastReadMessageFound = false
 
