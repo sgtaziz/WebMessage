@@ -7,21 +7,17 @@
 </template>
 
 <script>
-
 export default {
-  name: "TypingIndicator",
-  props: {
-  },
-  mounted() {
-  },
-  methods: {
-  },
+  name: 'TypingIndicator',
+  props: {},
+  mounted() {},
+  methods: {},
 }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 .typing-indicator {
-  $ti-color-bg: #3A3A3C;
+  $ti-color-bg: #3a3a3c;
   background-color: $ti-color-bg;
   will-change: transform;
   width: auto;
@@ -31,7 +27,7 @@ export default {
   margin: 0 auto;
   margin-top: 1px;
   position: relative;
-  animation: 2s bulge infinite ease-out;
+  animation: 2s bulge infinite 0.3333s;
   margin-bottom: 7px;
   margin-left: 0;
 
@@ -45,25 +41,27 @@ export default {
     width: 10px;
     border-radius: 50%;
     background-color: $ti-color-bg;
+    animation: 2s bulge infinite 0.6666s;
   }
   &::after {
     height: 5px;
     width: 5px;
     left: -4.5px;
     bottom: -6px;
+    animation: 2s bulge infinite 1s;
   }
   span {
     height: 7px;
     width: 7px;
     float: left;
     margin: 0 1px;
-    background-color: #9E9EA1;
+    background-color: #9e9ea1;
     display: block;
     border-radius: 50%;
     opacity: 0.4;
     @for $i from 1 through 3 {
       &:nth-of-type(#{$i}) {
-        animation: 1s blink infinite ($i * .3333s);
+        animation: 1s blink infinite ($i * 0.3333s);
       }
     }
   }

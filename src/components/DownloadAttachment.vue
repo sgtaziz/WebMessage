@@ -1,7 +1,8 @@
 <template>
   <div class="downloadContainer" @click="download">
     <span class="file">
-      <span class="filename">{{ filename }}</span>.<span class="extension">{{ extension }}</span>
+      <span class="filename">{{ filename }}</span
+      >.<span class="extension">{{ extension }}</span>
     </span>
     <feather type="download" stroke="#c2c2c2" size="20"></feather>
   </div>
@@ -10,37 +11,51 @@
 <script>
 export default {
   props: {
-    path: { type: String },
-    type: { type: String }
+    path: {
+      type: String,
+    },
+    type: {
+      type: String,
+    },
   },
-  data () {
-    return {
-    }
+  data() {
+    return {}
   },
   computed: {
     url() {
-      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(this.type)}&auth=${encodeURIComponent(this.$store.state.password)}`
+      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(
+        this.type
+      )}&auth=${encodeURIComponent(this.$store.state.password)}`
     },
-    file () {
+    file() {
       return this.path.split('/').pop()
     },
-    filename () {
-      return this.path.split('/').pop().split('.').slice(0, -1).join('.')
+    filename() {
+      return this.path
+        .split('/')
+        .pop()
+        .split('.')
+        .slice(0, -1)
+        .join('.')
     },
-    extension () {
-      return this.path.split('/').pop().split('.').pop()
-    }
+    extension() {
+      return this.path
+        .split('/')
+        .pop()
+        .split('.')
+        .pop()
+    },
   },
   methods: {
-    download () {
-      let a = document.createElement('a')
+    download() {
+      const a = document.createElement('a')
       a.download = this.type
-      a.href =  this.url
+      a.href = this.url
       document.body.appendChild(a)
       a.click()
       a.remove()
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -51,7 +66,7 @@ export default {
   color: lighten(#c2c2c2, 20%);
   max-width: 100%;
   width: auto;
-  background-color: #3A3A3C;
+  background-color: #3a3a3c;
   position: relative;
   overflow-wrap: break-word;
 

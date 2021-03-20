@@ -4,23 +4,34 @@
     <div class="progressContainer" v-if="isReading">
       <div class="progress" :style="`width:${progress}%;`"></div>
     </div>
-    <input ref="fileInput" type="file" style="visibility:hidden;width:0;height:0;" :accept="acceptedTypes" multiple @change="filesChanged" />
+    <input
+      ref="fileInput"
+      type="file"
+      style="visibility:hidden;width:0;height:0;"
+      :accept="acceptedTypes"
+      multiple
+      @change="filesChanged"
+    />
   </div>
 </template>
 
 <script>
 export default {
-  name: "UploadButton",
+  name: 'UploadButton',
   props: {
-    enableiMessageAttachments: { type: Boolean, default: false },
+    enableiMessageAttachments: {
+      type: Boolean,
+      default: false,
+    },
   },
+  emits: ['filesChanged'],
   data() {
     return {
       attachments: [],
       progress: 0,
       isReading: false,
-      sizeLimit: 100 // In MB. Files larger than this cause the client to crash for some reason.
-                     // Although it's probably good to keep it low so it doesn't take 5 years.
+      sizeLimit: 100, // In MB. Files larger than this cause the client to crash for some reason.
+      // Although it's probably good to keep it low so it doesn't take 5 years.
     }
   },
   computed: {
@@ -29,15 +40,15 @@ export default {
       if (this.enableiMessageAttachments) types = types + ',application/*,text/plain'
       return types
     },
-    attachmentsTooBig () {
+    attachmentsTooBig() {
       if (this.enableiMessageAttachments) {
-        return 'iMessage attachments size cannot be larger than '+this.sizeLimit+'MB.'
+        return 'iMessage attachments size cannot be larger than ' + this.sizeLimit + 'MB.'
       } else {
-        return 'SMS attachments size cannot be larger than '+this.sizeLimit*1000+'kB.'
+        return 'SMS attachments size cannot be larger than ' + this.sizeLimit * 1000 + 'kB.'
       }
-    }
+    },
   },
-  mounted () {
+  mounted() {
     if (!this.enableiMessageAttachments) {
       // SMS limitations recommend a max payload size of 300kB.
       // This can vary between carriers, but there is no way to
@@ -62,31 +73,31 @@ export default {
       this.$emit('filesChanged')
     },
     async filesChanged() {
-      let attachments = this.attachments || []
+      const attachments = this.attachments || []
       let totalSize = 0
-      let targetFiles = this.$refs.fileInput.files
+      const targetFiles = this.$refs.fileInput.files
 
       this.progress = 0
       this.isReading = true
-      
+
       for (let i = 0; i < targetFiles.length; i++) {
-        let attachment = {}
-        let file = targetFiles[i]
-        
+        const attachment = {}
+        const file = targetFiles[i]
+
         totalSize += file.size
         attachment.name = file.name
         attachment.data = await this.readFileData(file).catch(e => {
-          alert("An error occured while parsing file: '"+file.name+"'\n"+e)
+          alert("An error occured while parsing file: '" + file.name + "'\n" + e)
           this.progress = null
           this.attachments = null
           return
         })
 
         attachments.push(attachment)
-        this.progress = Math.round((attachments.length/targetFiles.length)*100)
+        this.progress = Math.round((attachments.length / targetFiles.length) * 100)
       }
 
-      if (totalSize > (this.sizeLimit * 1e6)) {
+      if (totalSize > this.sizeLimit * 1e6) {
         this.attachments = null
         this.isReading = false
         alert(this.attachmentsTooBig)
@@ -104,14 +115,14 @@ export default {
       this.$emit('filesChanged')
       this.$refs.fileInput.value = ''
     },
-    async readFileData (file) {
+    async readFileData(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader()
         reader.readAsDataURL(file)
         reader.onload = () => resolve(reader.result.split('base64,').pop())
         reader.onerror = error => reject(error)
       })
-    }
+    },
   },
 }
 </script>
@@ -130,7 +141,7 @@ export default {
     border-radius: 2px;
 
     .progress {
-      background: #2284FF;
+      background: #2284ff;
       width: 0%;
       height: 100%;
       -webkit-transition: width 1s ease-in-out;

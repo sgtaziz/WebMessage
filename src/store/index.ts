@@ -1,35 +1,32 @@
-import Vue from 'vue'
-import Vuex from 'vuex'
+import { createStore } from 'vuex'
+import Store from 'electron-store'
 import axios from 'axios'
-
-const Store = require('electron-store')
-
-Vue.use(Vuex)
+import { ipcRenderer } from 'electron'
 
 const persistentStore = new Store()
 
-export default new Vuex.Store({
+export default createStore({
   state: {
-    password: persistentStore.get('password', ''),
-    ipAddress: persistentStore.get('ipAddress', ''),
-    fallbackIpAddress: persistentStore.get('fallbackIpAddress', ''),
-    port: persistentStore.get('port', 8180),
-    ssl: persistentStore.get('ssl', true),
-    subjectLine: persistentStore.get('subjectLine', false),
-    transcode: persistentStore.get('transcode', true),
-    systemSound: persistentStore.get('systemSound', false),
-    launchOnStartup: persistentStore.get('launchOnStartup', false),
-    minimize: persistentStore.get('minimize', true),
-    macstyle: persistentStore.get('macstyle', true),
-    acceleration: persistentStore.get('acceleration', true),
-    messagesCache: [],
-    enableTunnel: persistentStore.get('enableTunnel', false),
-    cacheMessages: persistentStore.get('cacheMessages', false),
-    mutedChats: persistentStore.get('mutedChats', []),
-    notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3'),
-    emojiSet: persistentStore.get('emojiSet', 'Twitter'),
-    isTyping: {},
-    isTypingTimer: {}
+    password: persistentStore.get('password', '') as string,
+    ipAddress: persistentStore.get('ipAddress', '') as string,
+    fallbackIpAddress: persistentStore.get('fallbackIpAddress', '') as string,
+    port: persistentStore.get('port', 8180) as number,
+    ssl: persistentStore.get('ssl', true) as boolean,
+    subjectLine: persistentStore.get('subjectLine', false) as boolean,
+    transcode: persistentStore.get('transcode', true) as boolean,
+    systemSound: persistentStore.get('systemSound', false) as boolean,
+    launchOnStartup: persistentStore.get('launchOnStartup', false) as boolean,
+    minimize: persistentStore.get('minimize', true) as boolean,
+    macstyle: persistentStore.get('macstyle', true) as boolean,
+    acceleration: persistentStore.get('acceleration', true) as boolean,
+    messagesCache: [] as object[],
+    enableTunnel: persistentStore.get('enableTunnel', false) as boolean,
+    cacheMessages: persistentStore.get('cacheMessages', false) as boolean,
+    mutedChats: persistentStore.get('mutedChats', []) as string[],
+    notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3') as string,
+    emojiSet: persistentStore.get('emojiSet', 'Twitter') as string,
+    isTyping: [] as boolean[],
+    isTypingTimer: [] as NodeJS.Timeout[],
   },
   mutations: {
     setPassword(state, password) {
@@ -119,27 +116,27 @@ export default new Vuex.Store({
       state['messagesCache'] = []
     },
     setTyping(state, data) {
-      Vue.set(state['isTyping'], data.chatId, data.isTyping)
+      state['isTyping'][data.chatId] = data.isTyping
 
+      if (!data.isTyping) return
       if (state['isTypingTimer'][data.chatId]) clearTimeout(state['isTypingTimer'][data.chatId])
 
       state['isTypingTimer'][data.chatId] = setTimeout(() => {
-        Vue.set(state['isTyping'], data.chatId, false)
+        state['isTyping'][data.chatId] = false
+        console.log('closing')
       }, 60000)
-    }
+    },
   },
   getters: {
     baseURI: state => {
-      var scheme = state['ssl'] ? "wss" : "ws"
-      return scheme + "://" + state['ipAddress'] + ":" + state['port'] + "?auth=" + encodeURIComponent(state['password'])
+      const scheme = state['ssl'] ? 'wss' : 'ws'
+      return scheme + '://' + state['ipAddress'] + ':' + state['port'] + '?auth=' + state['password']
     },
     httpURI: state => {
-      var scheme = state['ssl'] ? "https" : "http"
-      return scheme + "://" + state['ipAddress'] + ":" + state["port"]
-    }
+      const scheme = state['ssl'] ? 'https' : 'http'
+      return scheme + '://' + state['ipAddress'] + ':' + state['port']
+    },
   },
-  actions: {
-  },
-  modules: {
-  }
+  actions: {},
+  modules: {},
 })

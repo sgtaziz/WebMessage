@@ -1,41 +1,48 @@
 module.exports = {
+  productionSourceMap: true,
   configureWebpack: {
-    target: "electron-renderer",
+    target: 'electron-renderer',
     node: {
       __filename: true,
-      __dirname: true
-    }
+      __dirname: true,
+    },
+    resolve: {
+      alias: {
+        vue$: 'vue/dist/vue.esm-bundler',
+      },
+    },
   },
   pluginOptions: {
     electronBuilder: {
-      appId: "com.sgtaziz.WebMessage",
-      productName: "WebMessage",
+      appId: 'com.sgtaziz.WebMessage',
+      productName: 'WebMessage',
       outputDir: 'build',
-      preload: 'src/preload.js',
+      nodeIntegration: true,
+      // preload: 'src/preload.js',
       builderOptions: {
-        appId: "com.sgtaziz.WebMessage",
-        productName: "WebMessage",
+        appId: 'com.sgtaziz.WebMessage',
+        productName: 'WebMessage',
         publish: ['github'],
         snap: {
-          publish: ['github']
+          publish: ['github'],
         },
         win: {
-          icon: 'build/icons/icon.ico'
+          icon: 'build/icons/icon.ico',
         },
         mac: {
-          icon: 'build/icons/icon.icns'
+          icon: 'build/icons/icon.icns',
         },
         extraFiles: [
           {
             from: 'node_modules/node-notifier/vendor/',
-            to: 'resources/vendor'
+            to: 'resources/vendor',
           },
           {
             from: 'vendor/',
-            to: 'resources/terminal-notifier/vendor'
-          }
-        ]
-      }
-    }
-  }
+            to: 'resources/terminal-notifier/vendor',
+          },
+        ],
+      },
+    },
+  },
 }

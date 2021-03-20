@@ -1,5 +1,12 @@
 <template>
-  <div class="expandable-image" :class="{ expanded: expanded, nostyle: $store.state.macstyle }" ref="this">
+  <div
+    class="expandable-image"
+    :class="{
+      expanded: expanded,
+      nostyle: $store.state.macstyle,
+    }"
+    ref="this"
+  >
     <template v-if="loadedImage">
       <i v-if="!expanded" class="expand-button" @click="expandImage">
         <feather type="maximize-2" stroke="#fff" size="24"></feather>
@@ -8,37 +15,50 @@
         <feather type="download" stroke="#fff" size="24"></feather>
       </i>
     </template>
-    <v-lazy-image crossorigin="anonymous" :src="url" @load="handleLoad" :download="path.split('/').pop()"/>
+    <lazy-image crossorigin="anonymous" :id="guid" :src="url" @load="handleLoad" :download="path.split('/').pop()" />
   </div>
 </template>
 
 <script>
 export default {
   props: {
-    path: { type: String },
-    type: { type: String },
-    loadedData: { type: Function }
+    path: {
+      type: String,
+    },
+    type: {
+      type: String,
+    },
+    loadedData: {
+      type: Function,
+    },
+    guid: {
+      type: String,
+    },
   },
-  data () {
+  data() {
     return {
       expanded: false,
       loadedImage: false,
-      cloned: null
+      cloned: null,
     }
   },
   computed: {
     url() {
-      return `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(this.type)}&auth=${encodeURIComponent(this.$store.state.password)}` + (this.$store.state.transcode ? '&transcode=1' : '')
-    }
+      return (
+        `${this.$store.getters.httpURI}/attachments?path=${encodeURIComponent(this.path)}&type=${encodeURIComponent(
+          this.type
+        )}&auth=${encodeURIComponent(this.$store.state.password)}` + (this.$store.state.transcode ? '&transcode=1' : '')
+      )
+    },
   },
   mounted() {
     document.addEventListener('keydown', this.closeImage)
   },
-  beforeDestroy () {
+  beforeUnmount() {
     document.removeEventListener('keydown', this.closeImage)
   },
   methods: {
-    closeImage (event) {
+    closeImage(event) {
       event.stopPropagation()
       if (!this.cloned) return
 
@@ -55,35 +75,35 @@ export default {
     },
     expandImage() {
       this.expanded = true
-      
+
       this.$nextTick(() => {
         this.cloned = this.$el.cloneNode(true)
         document.body.appendChild(this.cloned)
         $(this.cloned).addClass('expanded')
         this.cloned.addEventListener('touchmove', this.freezeVp, false)
         this.cloned.addEventListener('click', this.onExpandedImageClick)
-        this.$nextTick(() => this.cloned.style.opacity = 1)
+        setTimeout(() => (this.cloned.style.opacity = 1), 10)
       })
     },
-    freezeVp (e) {
+    freezeVp(e) {
       e.preventDefault()
     },
-    onExpandedImageClick (e) {
+    onExpandedImageClick(e) {
       this.closeImage(e)
     },
-    download () {
-      let a = document.createElement('a')
+    download() {
+      const a = document.createElement('a')
       a.download = this.type
       a.href = this.url
       document.body.appendChild(a)
       a.click()
       a.remove()
     },
-    handleLoad () {
+    handleLoad() {
       this.$nextTick(this.loadedData)
       this.loadedImage = true
-    }
-  }
+    },
+  },
 }
 </script>
 
@@ -92,7 +112,7 @@ export default {
   position: relative;
   transition: 0.25s opacity;
 
-  &.nostyle {  
+  &.nostyle {
     border-radius: 10px;
   }
 }
@@ -117,10 +137,12 @@ body > .expandable-image.expanded > img {
   object-fit: contain;
   margin: 0 auto;
 }
-.expand-button .feather, .download-button .feather {
-  filter: drop-shadow(1px 1px 1px rgba(0,0,0,0.5));
+.expand-button .feather,
+.download-button .feather {
+  filter: drop-shadow(1px 1px 1px rgba(0, 0, 0, 0.5));
 }
-.expand-button, .download-button {
+.expand-button,
+.download-button {
   position: absolute;
   z-index: 999;
   right: 10px;
@@ -136,7 +158,8 @@ body > .expandable-image.expanded > img {
   top: auto;
   bottom: 10px;
 }
-.expandable-image:hover .expand-button, .expandable-image:hover .download-button {
+.expandable-image:hover .expand-button,
+.expandable-image:hover .download-button {
   opacity: 1;
   cursor: pointer;
 }
