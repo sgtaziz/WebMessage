@@ -1,15 +1,17 @@
 import { ComponentInternalInstance, getCurrentInstance, nextTick, onMounted, reactive, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { Router, useRoute, useRouter } from 'vue-router'
 import emojiData from 'emoji-mart-vue-fast/data/all.json'
 import { EmojiIndex } from 'emoji-mart-vue-fast/src/index'
 import rangy from 'rangy'
 import filters from '@/filters'
 import 'rangy/lib/rangy-selectionsaverestore'
 import { state as messagesState, sendSocket } from './messages'
+import { autoCompleteHooks, autoCompleteInput } from './functions'
 import axios from 'axios'
 import { useStore } from 'vuex'
 
 let currentInstance: Nullable<ComponentInternalInstance> = null
+let router: Nullable<Router> = null
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const $rangy = rangy as any
 
@@ -30,7 +32,28 @@ const state = reactive({
   emojiIndex: new EmojiIndex(emojiData),
 })
 
+const handleFiles = (files: FileList, text?: string, target?: HTMLElement) => {
+  if (text && target && text.length > 0) {
+    nextTick(() => {
+      let windowSelection = window.getSelection() as Selection
+      const newText =
+        target.innerHTML.slice(0, windowSelection.anchorOffset - text.length) + target.innerHTML.slice(windowSelection.anchorOffset)
+      target.innerHTML = newText
+      if (newText.length > 0) {
+        windowSelection = window.getSelection() as Selection
+        windowSelection.collapse(target.lastChild, newText.length)
+      }
+    })
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const uploadButtonRef = currentInstance?.refs.uploadButton as any
+  uploadButtonRef.$refs.fileInput.files = files
+  uploadButtonRef.filesChanged()
+}
+
 export default () => {
+  router = useRouter()
   const watchRoute = useRoute()
   const store = useStore()
   currentInstance = getCurrentInstance()
@@ -186,7 +209,33 @@ export default () => {
   const messageInputPasted = (e: ClipboardEvent) => {
     e.preventDefault()
     e.stopPropagation()
+
+    if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
+      let text = e.clipboardData?.getData('text/plain') as string
+      text = filters.escapeHTML(text)
+      const files = e.clipboardData.files
+      handleFiles(files, text, e.target as HTMLElement)
+      return
+    }
+
     let paste = e.clipboardData?.getData('text/plain') as string
+    paste = filters.escapeHTML(paste)
+    document.execCommand('insertHTML', false, paste)
+  }
+
+  const messageInputDropped = (e: DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    console.log(e)
+
+    if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
+      let text = e.dataTransfer?.getData('text/plain') as string
+      text = filters.escapeHTML(text)
+      const files = e.dataTransfer.files
+      handleFiles(files, text, e.target as HTMLElement)
+    }
+
+    let paste = e.dataTransfer?.getData('text/plain') as string
     paste = filters.escapeHTML(paste)
     document.execCommand('insertHTML', false, paste)
   }
@@ -268,6 +317,39 @@ export default () => {
     state.showEmojiMenu = false
   }
 
+  const search = (input: string) => {
+    const url = `${store?.getters.httpURI}/search?text=${encodeURIComponent(input)}&auth=${encodeURIComponent(store?.state.password)}`
+    return new Promise(resolve => {
+      if (input.length < 2) {
+        return resolve([])
+      }
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          resolve(data.slice(0, 7))
+        })
+    })
+  }
+
+  const getResultValue = (result: { name: string; phone: string }) => {
+    return result.name + ` (${result.phone})`
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onSubmit = (result: any) => {
+    if (result && result.personId) {
+      router?.push('/message/' + result.personId)
+    } else if (result) {
+      autoCompleteInput(result)
+    } else {
+      const input = currentInstance?.refs.autoComplete as { value: string }
+      if (input) {
+        autoCompleteInput(input.value)
+      }
+    }
+    nextTick(autoCompleteHooks)
+  }
+
   onMounted(init)
   watch(() => watchRoute.params.id, init)
 
@@ -277,11 +359,15 @@ export default () => {
     previewFiles,
     removeAttachment,
     messageInputPasted,
+    messageInputDropped,
     messageInputChanged,
     handleBlur,
     insertEmoji,
     toggleEmojiMenu,
     hideEmojiMenu,
+    search,
+    getResultValue,
+    onSubmit,
     state,
   }
 }

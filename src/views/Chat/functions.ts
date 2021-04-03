@@ -1,10 +1,10 @@
 import { ipcRenderer, remote } from 'electron'
 import emojiRegex from 'emoji-regex'
 import { nextTick, onMounted, getCurrentInstance, reactive, ComponentInternalInstance, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router'
 import { state as messagesState, fetchMessages } from './messages'
 
-let route = useRoute()
+let route: Nullable<RouteLocationNormalizedLoaded> = null
 let currentInstance: Nullable<ComponentInternalInstance> = null
 
 const state = reactive({
@@ -49,7 +49,7 @@ const postLoad = (initial: boolean) => {
 
           if (container.scrollHeight - (container.scrollTop + container.offsetHeight) <= 20) {
             state.lastHeight = null
-            currentInstance?.emit('markAsRead', route.params.id)
+            currentInstance?.emit('markAsRead', route?.params.id)
           } else state.lastHeight = container.scrollHeight - container.scrollTop
 
           if (container.scrollTop == 0 && !messagesState.loading) {
@@ -68,7 +68,7 @@ const postLoad = (initial: boolean) => {
       return
     }
 
-    currentInstance.emit('markAsRead', route.params.id)
+    currentInstance.emit('markAsRead', route?.params.id)
   })
 }
 
@@ -105,52 +105,8 @@ const rightClickMessage = (args: object) => {
   ipcRenderer.send('rightClickMessage', args)
 }
 
-const handleFiles = (files: FileList, text?: string, target?: HTMLElement) => {
-  if (text && target && text.length > 0) {
-    nextTick(() => {
-      let windowSelection = window.getSelection() as Selection
-      const newText =
-        target.innerHTML.slice(0, windowSelection.anchorOffset - text.length) + target.innerHTML.slice(windowSelection.anchorOffset)
-      target.innerHTML = newText
-      if (newText.length > 0) {
-        windowSelection = window.getSelection() as Selection
-        windowSelection.collapse(target.lastChild, newText.length)
-      }
-    })
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uploadButtonRef = currentInstance?.refs.uploadButton as any
-  uploadButtonRef.$refs.fileInput.files = files
-  uploadButtonRef.filesChanged()
-}
-
-const hookPasteAndDrop = () => {
-  nextTick(() => {
-    const el = currentInstance?.refs.messageInput as HTMLElement
-    if (el) {
-      setTimeout(() => {
-        el.focus()
-      }, 10)
-      el.addEventListener('paste', e => {
-        if (e.clipboardData?.files && e.clipboardData.files.length > 0) {
-          const text = e.clipboardData.getData('Text')
-          const files = e.clipboardData.files
-          handleFiles(files, text, e.target as HTMLElement)
-        }
-      })
-      el.addEventListener('drop', e => {
-        if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
-          const files = e.dataTransfer.files
-          handleFiles(files)
-        }
-      })
-    }
-  })
-}
-
 const autoCompleteHooks = () => {
-  if (route.params.id == 'new') {
+  if (route?.params.id == 'new') {
     nextTick(() => {
       const input = document.getElementsByClassName('autocomplete-input')[0] as HTMLElement
       if (input) {
@@ -168,17 +124,14 @@ const autoCompleteInput = (input: { name: string; phone: string } | string) => {
 
   if (inputObj && inputObj.name) {
     messagesState.receiver = inputObj.phone
-    hookPasteAndDrop()
   } else if (/^\+\d{11,16}/gi.test(input as string)) {
     messagesState.receiver = input as string
-    hookPasteAndDrop()
   } else if (/^([a-zA-Z0-9_.+-])+@(([a-zA-Z0-9-])+\.)+([a-zA-Z0-9]{2,6})+$/.test(input as string)) {
     messagesState.receiver = input as string
-    hookPasteAndDrop()
   }
 }
 
-export { postLoad, scrollToBottom, hookPasteAndDrop, state }
+export { postLoad, scrollToBottom, autoCompleteHooks, autoCompleteInput, state }
 
 export default () => {
   route = useRoute()
@@ -191,7 +144,7 @@ export default () => {
   }
 
   onMounted(init)
-  watch(() => route.params.id, init)
+  watch(() => route?.params.id, init)
 
   return {
     postLoad,

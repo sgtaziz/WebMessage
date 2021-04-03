@@ -10,7 +10,12 @@
             v-html="$filters.nativeEmoji(messages.state.messages[0].name)"
           ></span>
           <span class="contact" v-else-if="$route.params.id == 'new'" style="overflow: visible;">
-            <autocomplete ref="autoComplete" :search="search" :get-result-value="getResultValue" @submit="onSubmit"></autocomplete>
+            <autocomplete
+              ref="autoComplete"
+              :search="input.search"
+              :get-result-value="input.getResultValue"
+              @submit="input.onSubmit"
+            ></autocomplete>
           </span>
         </div>
         <div class="closeBtn" @click="$router.push('/')">
@@ -209,6 +214,9 @@
             @blur="input.handleBlur"
             @input="input.messageInputChanged"
             @paste="input.messageInputPasted"
+            @drop="input.messageInputDropped"
+            @dragenter.prevent
+            @dragover.prevent
             @keydown.enter.exact="input.enterKey"
             @keydown.shift.enter="input.shiftEnterKey"
             contenteditable
@@ -233,6 +241,9 @@
               @blur="input.handleBlur"
               @input="input.messageInputChanged"
               @paste="input.messageInputPasted"
+              @drop="input.messageInputDropped"
+              @dragenter.prevent
+              @dragover.prevent
               @keydown.enter.exact="input.enterKey"
               @keydown.shift.enter="input.shiftEnterKey"
               contenteditable

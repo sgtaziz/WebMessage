@@ -17,6 +17,9 @@ declare module '@/components/DownloadAttachment'
 declare module '@/components/UploadButton'
 declare module '@/components/ReactionMenu'
 declare module '@/components/ReactionBubbles'
+declare module '@/views/Home'
+declare module '@/views/Chat'
+declare module '@/views/Blank'
 declare const __static: string
 
 interface EmojiObject {

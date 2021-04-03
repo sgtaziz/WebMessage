@@ -1,6 +1,6 @@
 import { reactive, computed, ComputedRef, watch, ComponentInternalInstance, getCurrentInstance, nextTick } from 'vue'
 import main from '@/main'
-import { postLoad, scrollToBottom, hookPasteAndDrop, state as functionsState } from './functions'
+import { postLoad, scrollToBottom, state as functionsState } from './functions'
 
 import { parseBuffer } from 'bplist-parser'
 import moment from 'moment'
@@ -143,13 +143,10 @@ const fetchMessagesHandler = (response: any) => {
   if (state.offset == 0) {
     state.messages = data
     postLoad(true)
-    // this.hookPasteAndDrop()
   } else {
     state.messages.push(...data)
     postLoad(false)
   }
-
-  // state.loading = false
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -293,13 +290,29 @@ const onSocketConnected = () => {
   fetchMessages()
 }
 
+const hookSocketEvents = () => {
+  const socket: Nullable<WebSocket> = main ? main.config.globalProperties.$socket : null
+  if (socket) {
+    socket.removeEventListener('message', onSocketMessage)
+    socket.removeEventListener('close', onSocketDisconnect)
+    socket.removeEventListener('error', onSocketDisconnect)
+    socket.removeEventListener('open', onSocketConnected)
+    socket.addEventListener('message', onSocketMessage)
+    socket.addEventListener('close', onSocketDisconnect)
+    socket.addEventListener('error', onSocketDisconnect)
+    socket.addEventListener('open', onSocketConnected)
+  } else {
+    setTimeout(hookSocketEvents, 1000)
+  }
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const fetchMessages = () => {
   const socket: Nullable<WebSocket> = main ? main.config.globalProperties.$socket : null
   if (route && state.offset == 0 && store && store.state.messagesCache[route.params.id as string]) {
     state.messages = store.state.messagesCache[route.params.id as string].map((o: object) => ({ ...o }))
     postLoad(true)
-    hookPasteAndDrop()
+    hookSocketEvents()
     return
   }
 
@@ -316,14 +329,7 @@ const fetchMessages = () => {
       },
     })
 
-    socket.removeEventListener('message', onSocketMessage)
-    socket.removeEventListener('close', onSocketDisconnect)
-    socket.removeEventListener('error', onSocketDisconnect)
-    socket.removeEventListener('open', onSocketConnected)
-    socket.addEventListener('message', onSocketMessage)
-    socket.addEventListener('close', onSocketDisconnect)
-    socket.addEventListener('error', onSocketDisconnect)
-    socket.addEventListener('open', onSocketConnected)
+    hookSocketEvents()
   } else {
     setTimeout(fetchMessages, 1000)
   }
