@@ -228,7 +228,6 @@ export default () => {
   const messageInputDropped = (e: DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log(e)
 
     if (e.dataTransfer?.files && e.dataTransfer.files.length > 0) {
       let text = e.dataTransfer?.getData('text/plain') as string

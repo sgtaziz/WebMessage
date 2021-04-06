@@ -36,8 +36,8 @@ const sendPowertoastNotification = (options: NotificationOptions, messageData: {
   options.cropIcon = true
   options.onClick = 'webmessage:' + messageData.personId
   const toast = require('powertoast')
-  toast(options).catch((err: string) => {
-    console.log(err)
+  toast(options).catch(() => {
+    // console.log(err)
   })
 }
 

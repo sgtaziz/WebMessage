@@ -67,7 +67,6 @@ const closeReactionMenu = () => {
 
 const sendReaction = (reactionId: string, guid: string, part: string) => {
   if (!messagesState.messages[0]) return
-  console.log(reactionId, guid, part)
   sendSocket({
     action: 'sendReaction',
     data: {

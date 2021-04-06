@@ -215,11 +215,10 @@ export default {
   },
   beforeUnmount() {
     if (this.relay) {
-      console.log('Destroying old tunnel...')
       try {
         this.relay.stop()
       } catch (err) {
-        console.warn('Error while destroying tunnel:', err)
+        // This happens sometimes for some reason. Seems like a race condition
       }
     }
   },
@@ -239,11 +238,10 @@ export default {
         this.initTunnel()
       } else {
         if (this.relay) {
-          console.log('Destroying old tunnel...')
           try {
             this.relay.stop()
           } catch (err) {
-            console.warn('Error while destroying tunnel:', err)
+            // This happens sometimes for some reason. Seems like a race condition
           }
           this.$store.commit('setIPAddress', this.ipAddress)
           this.$emit('saved')
@@ -255,15 +253,12 @@ export default {
     },
     initTunnel() {
       if (this.relay) {
-        console.log('Destroying old tunnel...')
         try {
           this.relay.stop()
         } catch (err) {
-          console.warn('Error while destroying tunnel:', err)
+          // This happens sometimes for some reason. Seems like a race condition
         }
       }
-
-      console.log('Initiating tunnel...')
 
       this.relay = new usbmux.Relay(this.port, this.port)
         .on('error', err => {

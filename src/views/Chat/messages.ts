@@ -164,7 +164,7 @@ const newMessageHandler = (response: any) => {
   }
 
   if (Object.keys(message).length == 0) {
-    console.log('Received a message, but content was empty.')
+    // console.log('Received a message, but content was empty.')
   } else {
     if (state.messages && state.messages.length > 0 && message[0]['personId'] == route.params.id) {
       state.reloadingGuid[message[0].guid] = null
