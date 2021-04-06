@@ -38,7 +38,6 @@
     "jquery": "^3.6.0",
     "moment": "^2.29.1",
     "node-notifier": "^9.0.1",
-    "powertoast": "^1.2.3",
     "rangy": "^1.3.0",
     "usbmux": "^0.1.0",
     "vue": "^3.0.0",
@@ -50,6 +49,9 @@
     "vue-native-websocket-vue3": "^3.1.0",
     "vue-router": "^4.0.0-0",
     "vuex": "^4.0.0-0"
+  },
+  "optionalDependencies": {
+    "powertoast": "^1.2.3"
   },
   "devDependencies": {
     "@types/auto-launch": "^5.0.1",

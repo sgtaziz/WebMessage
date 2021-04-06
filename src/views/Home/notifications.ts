@@ -3,7 +3,6 @@ import { reactive } from 'vue'
 import { RouteLocationNormalizedLoaded, Router, useRoute, useRouter } from 'vue-router'
 import { Store, useStore } from 'vuex'
 import { remote } from 'electron'
-import toast from 'powertoast'
 import nodeNotifier from 'node-notifier'
 import axios from 'axios'
 import fs from 'fs'
@@ -36,6 +35,7 @@ const sendPowertoastNotification = (options: NotificationOptions, messageData: {
   options.silent = !options.sound
   options.cropIcon = true
   options.onClick = 'webmessage:' + messageData.personId
+  const toast = require('powertoast')
   toast(options).catch((err: string) => {
     console.log(err)
   })

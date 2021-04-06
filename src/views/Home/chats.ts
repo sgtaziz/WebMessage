@@ -181,7 +181,6 @@ const newMessageHandler = (response: any) => {
         title: messageData.name as string,
         message: (body == '' ? 'Attachment' : body) as string,
         sound: store?.state.systemSound as boolean,
-        reply: true,
         icon: null as Nullable<string>,
       }
 
