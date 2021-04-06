@@ -169,7 +169,6 @@ const newMessageHandler = (response: any) => {
     if (messageData.sender != 1 && remote.Notification.isSupported()) {
       if (store?.state.mutedChats.includes(messageData.personId)) return
       // if (this.lastNotificationGUID == messageData.guid) return
-      if (route?.params.id == messageData.personId && document.hasFocus()) return
 
       let body = messageData.text.replace(/\u{fffc}/gu, '')
       if (messageData.group && messageData.group.startsWith('chat')) {
@@ -186,7 +185,7 @@ const newMessageHandler = (response: any) => {
         icon: null as Nullable<string>,
       }
 
-      if (document.hasFocus()) return
+      if (document.hasFocus() && remote.getCurrentWindow().isVisible() && route?.params.id == messageData.personId) return
       sendNotifierNotification(notificationOptions, messageData, chatData)
     } else if (messageData.sender != 1) {
       console.log('Notifications are not supported on this system.')
@@ -322,6 +321,9 @@ const onSocketDisconnect = (e: Event | CloseEvent) => {
   store?.commit('resetMessages')
   router?.push('/').catch(() => {})
   state.chats = []
+
+  // eslint-disable-next-line @typescript-eslint/no-use-before-define
+  if (windowState.status == 0) setTimeout(connectWS, 1000)
 }
 
 const onSocketConnected = () => {
@@ -445,5 +447,6 @@ export default () => {
     deleteChat,
     composeMessage,
     markAsRead,
+    connectWS,
   }
 }

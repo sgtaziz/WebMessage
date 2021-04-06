@@ -123,7 +123,6 @@ export default createStore({
 
       state['isTypingTimer'][data.chatId] = setTimeout(() => {
         state['isTyping'][data.chatId] = false
-        console.log('closing')
       }, 60000)
     },
   },

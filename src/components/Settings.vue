@@ -364,6 +364,7 @@ export default {
   mounted() {
     this.loadValues()
 
+    ipcRenderer.send('startup_check')
     ipcRenderer.send('app_version')
     ipcRenderer.on('app_version', (event, arg) => {
       ipcRenderer.removeAllListeners('app_version')

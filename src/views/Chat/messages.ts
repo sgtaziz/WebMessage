@@ -157,7 +157,7 @@ const newMessageHandler = (response: any) => {
   if (route.params.id == 'new') {
     if (Object.keys(message).length > 0) {
       if (message[0].chatId == state.receiver) {
-        router.push('/message/' + message[0].personId)
+        router.push('/chat/' + message[0].personId)
       }
     }
     return

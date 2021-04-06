@@ -188,7 +188,7 @@ export default {
       align-items: center;
       justify-content: center;
 
-      >>> .feather {
+      .feather:deep() {
         margin-left: 1px;
       }
     }

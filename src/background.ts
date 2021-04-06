@@ -182,6 +182,8 @@ function showWin() {
   else {
     win.setSkipTaskbar(false)
     win.show()
+    win.setAlwaysOnTop(true)
+    win.setAlwaysOnTop(false) // weird work around but it works
   }
   if (app.dock) app.dock.show()
 
@@ -267,12 +269,6 @@ ipcMain.on('loaded', () => {
   registerShortcuts()
 })
 
-// ipcMain.on('notification', (event, opts) => {
-//   Notifier.notify("hello??")
-//   Notifier.notify(opts)
-//   console.log("notifying with", opts)
-// })
-
 ipcMain.on('rightClickMessage', (event, args) => {
   rightClickedMessage = args
 })
@@ -292,7 +288,7 @@ ipcMain.on('startup_check', () => {
   autoLauncher
     .isEnabled()
     .then(function(isEnabled) {
-      const optionEnabled = persistentStore.get('startup', false)
+      const optionEnabled = persistentStore.get('launchOnStartup', false)
 
       if (optionEnabled && !isEnabled) {
         autoLauncher.enable()
@@ -317,11 +313,15 @@ ipcMain.on('quit_app', () => {
   app.quit()
 })
 
-ipcMain.on('minimizeToTray', () => {
+function minimizeToTray () {
   if (!win) return
   win.setSkipTaskbar(true)
   win.hide()
   if (app.dock) app.dock.hide()
+}
+
+ipcMain.on('minimizeToTray', () => {
+  minimizeToTray()
 })
 
 ipcMain.on('show_win', () => {
@@ -351,7 +351,16 @@ function registerLocalFileProtocols() {
     }
   })
 
-  // protocol.registerHttpProtocol('WebMessage', (request, callback) => {})
+  app.removeAsDefaultProtocolClient('webmessage');
+
+  // If we are running a non-packaged version of the app && on windows
+  if(isDevelopment && process.platform === 'win32') {
+    // Set the path of electron.exe and your app.
+    // These two additional parameters are only available on windows.
+    app.setAsDefaultProtocolClient('webmessage', process.execPath, [path.resolve(process.argv[1])])
+  } else {
+    app.setAsDefaultProtocolClient('webmessage');
+  }
 }
 
 const gotTheLock = app.requestSingleInstanceLock()
@@ -359,8 +368,12 @@ const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.quit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (event, args) => {
     showWin()
+    let uriLocation = args.pop() as string
+    let personId = uriLocation.split(':').pop()
+    if (!personId || personId.trim() == '') return
+    if (win) win.webContents.send('navigateChat', personId)
   })
 
   app.whenReady().then(() => {

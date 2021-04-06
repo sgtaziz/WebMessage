@@ -21,6 +21,13 @@ module.exports = {
       // preload: 'src/preload.js',
       builderOptions: {
         appId: 'com.sgtaziz.WebMessage',
+        protocols: [
+          {
+            name: 'WebMessage',
+            role: 'Viewer',
+            schemes: ['webmessage'],
+          },
+        ],
         productName: 'WebMessage',
         publish: ['github'],
         snap: {
@@ -38,8 +45,8 @@ module.exports = {
             to: 'resources/vendor',
           },
           {
-            from: 'vendor/',
-            to: 'resources/terminal-notifier/vendor',
+            from: 'terminal-notifier/',
+            to: 'resources/terminal-notifier',
           },
         ],
       },

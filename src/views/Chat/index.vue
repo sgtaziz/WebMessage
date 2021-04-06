@@ -281,21 +281,19 @@
 </template>
 
 <script lang="ts">
-import Autocomplete from '@trevoreyre/autocomplete-vue'
-import VideoPlayer from '@/components/VideoPlayer'
-import ExpandableImage from '@/components/ExpandableImage'
-import DownloadAttachment from '@/components/DownloadAttachment'
-import UploadButton from '@/components/UploadButton'
-import ReactionMenu from '@/components/ReactionMenu'
-import ReactionBubbles from '@/components/ReactionBubbles'
+import Autocomplete from '@/components/AutoComplete/index.vue'
+import VideoPlayer from '@/components/VideoPlayer.vue'
+import ExpandableImage from '@/components/ExpandableImage.vue'
+import DownloadAttachment from '@/components/DownloadAttachment.vue'
+import UploadButton from '@/components/UploadButton.vue'
+import ReactionMenu from '@/components/ReactionMenu.vue'
+import ReactionBubbles from '@/components/ReactionBubbles.vue'
 import TypingIndicator from '@/components/TypingIndicator.vue'
 import PayloadAttachment from '@/components/PayloadAttachment.vue'
 import Avatar from '@/components/Avatar.vue'
 import AudioPlayer from '@/components/AudioPlayer.vue'
 import UnsupportedMessage from '@/components/UnsupportedMessage.vue'
 import { Picker } from 'emoji-mart-vue-fast/src/index'
-import './messages'
-import '@trevoreyre/autocomplete-vue/dist/style.css'
 import 'emoji-mart-vue-fast/css/emoji-mart.css'
 
 import functionsComp from './functions'

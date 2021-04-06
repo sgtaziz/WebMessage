@@ -1,64 +1,71 @@
 <template>
-  <!-- <vue-confirm-dialog class="confirmDialog"></vue-confirm-dialog> -->
-  <settings ref="settingsModal" @saved="chats.connectWS"></settings>
-  <div id="nav" :class="{ notrans: !$store.state.acceleration }">
-    <div class="titlebar">
-      <div class="buttons" v-if="$store.state.macstyle || window.process.platform === 'darwin'">
-        <div class="close" @click="window.closeWindow">
-          <span class="closebutton"><span>x</span></span>
+  <div
+    id="vueApp"
+    :class="{
+      nostyle: !($store.state.macstyle || window.process.platform === 'darwin'),
+      maximized: (window.state.maximized || !$store.state.acceleration) && window.process.platform !== 'darwin',
+    }"
+  >
+    <settings ref="settingsModal" @saved="chats.connectWS"></settings>
+    <div id="nav" :class="{ notrans: !$store.state.acceleration }">
+      <div class="titlebar">
+        <div class="buttons" v-if="$store.state.macstyle || window.process.platform === 'darwin'">
+          <div class="close" @click="window.closeWindow">
+            <span class="closebutton"><span>x</span></span>
+          </div>
+          <div class="minimize" @click="window.minimizeWindow">
+            <span class="minimizebutton"><span>&ndash;</span></span>
+          </div>
+          <div class="zoom" @click="window.maximizeWindow">
+            <span class="zoombutton"><span>+</span></span>
+          </div>
         </div>
-        <div class="minimize" @click="window.minimizeWindow">
-          <span class="minimizebutton"><span>&ndash;</span></span>
+        <div class="statusIndicator" style="margin-top: 1px;" v-tooltip:bottom.tooltip="window.statusText.value">
+          <feather type="circle" stroke="rgba(25,25,25,0.5)" :fill="window.statusColor.value" size="10"></feather>
         </div>
-        <div class="zoom" @click="window.maximizeWindow">
-          <span class="zoombutton"><span>+</span></span>
+        <div class="menuBtn">
+          <feather type="settings" stroke="rgba(152,152,152,0.5)" size="20" @click="$refs.settingsModal.openModal()"></feather>
+        </div>
+        <div class="menuBtn">
+          <feather type="refresh-cw" stroke="rgba(152,152,152,0.5)" size="19" @click="chats.connectWS"></feather>
+        </div>
+        <div class="menuBtn">
+          <feather type="edit" stroke="rgba(36,132,255,0.65)" size="20" @click="chats.composeMessage"></feather>
+        </div>
+        <div class="menuBtn" v-if="window.updateAvailable">
+          <feather type="download" stroke="rgba(152,255,152,0.65)" size="20" @click="window.restart"></feather>
         </div>
       </div>
-      <div class="statusIndicator" style="margin-top: 1px;" v-tooltip:bottom.tooltip="window.statusText.value">
-        <feather type="circle" stroke="rgba(25,25,25,0.5)" :fill="window.statusColor.value" size="10"></feather>
+      <div class="searchContainer">
+        <input type="search" placeholder="Search" class="textinput" v-model="chats.search" />
       </div>
-      <div class="menuBtn">
-        <feather type="settings" stroke="rgba(152,152,152,0.5)" size="20" @click="$refs.settingsModal.openModal()"></feather>
-      </div>
-      <div class="menuBtn">
-        <feather type="refresh-cw" stroke="rgba(152,152,152,0.5)" size="19" @click="chats.connectWS"></feather>
-      </div>
-      <div class="menuBtn">
-        <feather type="edit" stroke="rgba(36,132,255,0.65)" size="20" @click="chats.composeMessage"></feather>
-      </div>
-      <div class="menuBtn" v-if="window.updateAvailable">
-        <feather type="download" stroke="rgba(152,255,152,0.65)" size="20" @click="window.restart"></feather>
+      <div class="chats scrollable" ref="chatsContainer">
+        <chat
+          v-for="chat in chats.filteredChats.value"
+          :key="chat.id"
+          :chatid="chat.personId"
+          :author="chat.author"
+          :text="chat.text"
+          :date="chat.date"
+          :read="chat.read"
+          :docid="chat.docid"
+          :showNum="chat.showNum"
+          :isGroup="chat.personId.startsWith('chat') && !chat.personId.includes('@') && chat.personId.length >= 20"
+          @deleted="deleteChat(chat)"
+        />
       </div>
     </div>
-    <div class="searchContainer">
-      <input type="search" placeholder="Search" class="textinput" v-model="chats.search" />
+    <div id="content">
+      <router-view v-slot="{ Component }">
+        <transition name="fade" mode="out-in">
+          <component :is="Component" @markAsRead="chats.markAsRead" />
+        </transition>
+      </router-view>
     </div>
-    <div class="chats scrollable" ref="chatsContainer">
-      <chat
-        v-for="chat in chats.filteredChats.value"
-        :key="chat.id"
-        :chatid="chat.personId"
-        :author="chat.author"
-        :text="chat.text"
-        :date="chat.date"
-        :read="chat.read"
-        :docid="chat.docid"
-        :showNum="chat.showNum"
-        :isGroup="chat.personId.startsWith('chat') && !chat.personId.includes('@') && chat.personId.length >= 20"
-        @deleted="deleteChat(chat)"
-      />
-    </div>
-  </div>
-  <div id="content">
-    <router-view v-slot="{ Component }">
-      <transition name="fade" mode="out-in">
-        <component :is="Component" @markAsRead="chats.markAsRead" />
-      </transition>
-    </router-view>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import Chat from '@/components/Chat.vue'
 import Settings from '@/components/Settings.vue'
 import Tooltip from '@/components/Tooltip.vue'
@@ -221,7 +228,7 @@ body {
   border-radius: 10px;
 }
 
-#app {
+#vueApp {
   font-family: 'Roboto', -apple-system, BlinkMacSystemFont, Avenir, Helvetica, Arial, sans-serif;
   font-weight: 300;
   text-align: center;

@@ -151,6 +151,8 @@ export default () => {
 
         delete state.messageText[watchRoute.params.id as string]
         delete state.subjectText[watchRoute.params.id as string]
+        state.lastTypingValue = ''
+        state.lastTypingStamp = 0
 
         const messageInputRef = currentInstance?.refs.messageInput as HTMLElement
         const subjectInputRef = currentInstance?.refs.subjectInput as HTMLElement
@@ -338,7 +340,7 @@ export default () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onSubmit = (result: any) => {
     if (result && result.personId) {
-      router?.push('/message/' + result.personId)
+      router?.push('/chat/' + result.personId)
     } else if (result) {
       autoCompleteInput(result)
     } else {
@@ -368,6 +370,7 @@ export default () => {
     search,
     getResultValue,
     onSubmit,
+    sendText,
     state,
   }
 }
