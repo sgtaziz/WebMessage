@@ -105,9 +105,8 @@ async function createWindow() {
       app.quit()
     } else if (win) {
       e.preventDefault()
-      win.setSkipTaskbar(true)
-      win.hide()
-      if (app.dock) app.dock.hide()
+      // eslint-disable-next-line @typescript-eslint/no-use-before-define
+      minimizeToTray()
     }
   })
 
@@ -313,11 +312,12 @@ ipcMain.on('quit_app', () => {
   app.quit()
 })
 
-function minimizeToTray () {
+function minimizeToTray() {
   if (!win) return
   win.setSkipTaskbar(true)
   win.hide()
   if (app.dock) app.dock.hide()
+  loadURL()
 }
 
 ipcMain.on('minimizeToTray', () => {
@@ -351,15 +351,15 @@ function registerLocalFileProtocols() {
     }
   })
 
-  app.removeAsDefaultProtocolClient('webmessage');
+  app.removeAsDefaultProtocolClient('webmessage')
 
   // If we are running a non-packaged version of the app && on windows
-  if(isDevelopment && process.platform === 'win32') {
+  if (isDevelopment && process.platform === 'win32') {
     // Set the path of electron.exe and your app.
     // These two additional parameters are only available on windows.
     app.setAsDefaultProtocolClient('webmessage', process.execPath, [path.resolve(process.argv[1])])
   } else {
-    app.setAsDefaultProtocolClient('webmessage');
+    app.setAsDefaultProtocolClient('webmessage')
   }
 }
 
@@ -370,8 +370,8 @@ if (!gotTheLock) {
 } else {
   app.on('second-instance', (event, args) => {
     showWin()
-    let uriLocation = args.pop() as string
-    let personId = uriLocation.split(':').pop()
+    const uriLocation = args.pop() as string
+    const personId = uriLocation.split(':').pop()
     if (!personId || personId.trim() == '') return
     if (win) win.webContents.send('navigateChat', personId)
   })

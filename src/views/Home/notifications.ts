@@ -4,6 +4,11 @@ import { RouteLocationNormalizedLoaded, Router, useRoute, useRouter } from 'vue-
 import { Store, useStore } from 'vuex'
 import { remote } from 'electron'
 import toast from 'powertoast'
+import nodeNotifier from 'node-notifier'
+import axios from 'axios'
+import fs from 'fs'
+import path from 'path'
+import https from 'https'
 
 interface NotificationOptions {
   appID: string
@@ -27,11 +32,7 @@ const state = reactive({
   notifSound: null as Nullable<HTMLAudioElement>,
 })
 
-const sendPowertoastNotification = (
-  options: NotificationOptions,
-  messageData: { authorDocid: string; personId: string },
-  chatData: { id: string }
-) => {
+const sendPowertoastNotification = (options: NotificationOptions, messageData: { authorDocid: string; personId: string }) => {
   options.silent = !options.sound
   options.cropIcon = true
   options.onClick = 'webmessage:' + messageData.personId
@@ -40,21 +41,37 @@ const sendPowertoastNotification = (
   })
 }
 
-const sendNotifierNotification = (
-  options: NotificationOptions,
-  messageData: { authorDocid: string; personId: string },
-  chatData: { id: string }
-) => {
-  const path = require('path')
-  const fs = require('fs')
-  const https = require('https')
+const downloadImage = async (url: string, imagePath: string) => {
+  return new Promise((resolve, reject) => {
+    axios({
+      url,
+      responseType: 'blob',
+    })
+      .then(response => {
+        response.data
+          .arrayBuffer()
+          .then((arrBuffer: ArrayBuffer) => {
+            const buffer = Buffer.from(arrBuffer)
+            fs.writeFileSync(imagePath, buffer)
+            resolve(imagePath)
+          })
+          .catch((err: string) => {
+            reject(err)
+          })
+      })
+      .catch(err => {
+        reject(err)
+      })
+  })
+}
+
+const sendNotifierNotification = (options: NotificationOptions, messageData: { authorDocid: string; personId: string }) => {
   const tempDir = path.join(remote.app.getAppPath(), '..', 'temp')
 
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir)
   }
 
-  const download = require('image-downloader')
   const fileDir = path.join(tempDir, `avatar_${messageData.authorDocid}.jpg`)
   const dlOptions = {
     url: `${store?.getters.httpURI}/contactimg?docid=${messageData.authorDocid}&auth=${encodeURIComponent(store?.state.password)}`,
@@ -62,25 +79,21 @@ const sendNotifierNotification = (
     agent: new https.Agent({ rejectUnauthorized: false }),
   }
 
-  console.log('trying to download', dlOptions)
-
-  download
-    .image(dlOptions)
-    .then(() => {
-      options.icon = fileDir
-      if (fs.statSync(fileDir).size == 0) throw Error('Empty image')
+  downloadImage(dlOptions.url, dlOptions.dest)
+    .then(dir => {
+      options.icon = dir as string
+      if (fs.statSync(dir as string).size == 0) throw Error('Empty image')
     })
-    .catch((err: any) => {
-      console.log(err)
+    .catch(() => {
       options.icon = __static + '/icon.png'
     })
     .finally(() => {
-      console.log('done downloading')
       if (!store?.state.systemSound) state.notifSound?.play()
       if (document.hasFocus() && remote.getCurrentWindow().isVisible() && route?.params.id != messageData.personId) return
 
-      const NotificationCenter = require('node-notifier').NotificationCenter
-      let notifier: any = null
+      const NotificationCenter = nodeNotifier.NotificationCenter
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let notifier: any = nodeNotifier
 
       if (process.platform === 'darwin') {
         notifier = new NotificationCenter({
@@ -91,15 +104,13 @@ const sendNotifierNotification = (
           ),
         })
       } else if (process.platform == 'win32') {
-        sendPowertoastNotification(options, messageData, chatData)
+        sendPowertoastNotification(options, messageData)
         return
-      } else {
-        notifier = require('node-notifier')
       }
 
-      notifier.notify(options, (err: any, action: any) => {
+      notifier.notify(options, (err: string, action: string) => {
         if (err) return
-        if ((action == 'activate' || action == 'click') && chatData && chatData.id) {
+        if ((action == 'activate' || action == 'click') && messageData && messageData.personId) {
           ipcRenderer.send('show_win')
           router?.push('/chat/' + messageData.personId)
         }

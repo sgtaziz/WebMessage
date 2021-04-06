@@ -131,7 +131,7 @@ export default () => {
       router?.push('/chat/' + personId).catch(() => {})
     })
 
-    ipcRenderer.on('win_id', (e, id) => {
+    ipcRenderer.on('win_id', () => {
       // state.win = remote.BrowserWindow.fromId(id)
       state.win = remote.getCurrentWindow()
 

@@ -186,7 +186,7 @@ const newMessageHandler = (response: any) => {
       }
 
       if (document.hasFocus() && remote.getCurrentWindow().isVisible() && route?.params.id == messageData.personId) return
-      sendNotifierNotification(notificationOptions, messageData, chatData)
+      sendNotifierNotification(notificationOptions, messageData)
     } else if (messageData.sender != 1) {
       console.log('Notifications are not supported on this system.')
     }
@@ -230,7 +230,7 @@ const newReactionHandler = (response: any) => {
     }
 
     if (document.hasFocus()) return
-    sendNotifierNotification(notificationOptions, reaction, chatData)
+    sendNotifierNotification(notificationOptions, reaction)
   } else if (reactions && reactions.length > 0 && reactions[0].sender != 1) {
     console.log('Notifications are not supported on this system.')
   }

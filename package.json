@@ -35,7 +35,6 @@
     "emoji-mart-vue-fast": "https://github.com/sgtaziz/emoji-mart-vue",
     "emoji-regex": "^9.2.2",
     "feather-icons": "^4.28.0",
-    "image-downloader": "^4.0.2",
     "jquery": "^3.6.0",
     "moment": "^2.29.1",
     "node-notifier": "^9.0.1",
