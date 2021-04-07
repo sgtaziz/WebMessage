@@ -21,8 +21,8 @@ matrix:
       language: node_js
       node_js: "14"
       env:
-        - ELECTRON_CACHE=%LOCALAPPDATA%/electron/Cache
-        - ELECTRON_BUILDER_CACHE=%LOCALAPPDATA%/electron-builder/Cache
+        - ELECTRON_CACHE=$HOME/AppData/Local/electron/Cache
+        - ELECTRON_BUILDER_CACHE=$HOME/AppData/Local/electron-builder/Cache
       cache:
         directories:
           - node_modules
