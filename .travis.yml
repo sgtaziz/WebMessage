@@ -9,15 +9,27 @@ matrix:
       env:
         - ELECTRON_CACHE=$HOME/.cache/electron
         - ELECTRON_BUILDER_CACHE=$HOME/.cache/electron-builder
+      cache:
+        directories:
+          - node_modules
+          - yarn
+          - $HOME/.cache/electron
+          - $HOME/.cache/electron-builder
+      before_cache:
+        - rm -rf $HOME/.cache/electron-builder/wine
     - os: windows
       language: node_js
       node_js: "14"
+      env:
+        - ELECTRON_CACHE=%LOCALAPPDATA%/electron/Cache
+        - ELECTRON_BUILDER_CACHE=%LOCALAPPDATA%/electron-builder/Cache
+      cache:
+        directories:
+          - node_modules
+          - yarn
+          - $HOME/AppData/Local/electron/Cache
+          - $HOME/AppData/Local/electron-builder/Cache
 
-cache:
-  directories:
-    - node_modules
-    - $HOME/.cache/electron
-    - $HOME/.cache/electron-builder
 
 script:
   - |
@@ -37,8 +49,6 @@ script:
       yarn run generate-icons;
       yarn run build -w -p always;
     fi
-before_cache:
-  - rm -rf $HOME/.cache/electron-builder/wine
   
 branches:
   except:
