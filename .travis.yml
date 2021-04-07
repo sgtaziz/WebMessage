@@ -36,6 +36,7 @@ matrix:
       env:
         - ELECTRON_CACHE=$HOME/AppData/Local/electron/Cache
         - ELECTRON_BUILDER_CACHE=$HOME/AppData/Local/electron-builder/Cache
+        - YARN_GPG=no
       cache:
         directories:
           - node_modules
