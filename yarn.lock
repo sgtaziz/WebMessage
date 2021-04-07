@@ -1310,6 +1310,20 @@
     "@nodelib/fs.scandir" "2.1.4"
     fastq "^1.6.0"
 
+"@nodert-win10-rs4/windows.data.xml.dom@^0.4.4":
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/@nodert-win10-rs4/windows.data.xml.dom/-/windows.data.xml.dom-0.4.4.tgz#84b749671e26033031c3d8324766bf9746a8b12e"
+  integrity sha512-DxnuNqQC1Fot/bLpOVqeykVGfLKXe0+staMRlh08aUYOFqSSGa4LLxhKvgCHlt65zhZJ89nip0Dw4HJSUPS2uA==
+  dependencies:
+    nan latest
+
+"@nodert-win10-rs4/windows.ui.notifications@^0.4.4":
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/@nodert-win10-rs4/windows.ui.notifications/-/windows.ui.notifications-0.4.4.tgz#7c34e179f5e57d473c4b0ca904759e476899f5df"
+  integrity sha512-C03i5bj7LdE2Ta9ei7GiTPGb54bPd+ON8xqFAFfwPEeg+KTQEtG9R8JdTfiGJACYM583KiclMT1tKq8uyfZLcA==
+  dependencies:
+    nan latest
+
 "@npmcli/move-file@^1.0.1":
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/@npmcli/move-file/-/move-file-1.1.2.tgz"
@@ -4769,9 +4783,10 @@ emoji-datasource@^6.0.1:
   resolved "https://registry.yarnpkg.com/emoji-datasource/-/emoji-datasource-6.0.1.tgz#0fd25101104cf16ddf36819237f4f174ec85a01f"
   integrity sha512-kvkqTjdeXhVKwT2242jGhK18EpevORCTTBETDhByWOEVGwn5X+W5jvBioo+wrAnR7inUzydJ4gKUU5SQGjUG6A==
 
-"emoji-mart-vue-fast@https://github.com/sgtaziz/emoji-mart-vue":
-  version "8.0.3"
-  resolved "https://github.com/sgtaziz/emoji-mart-vue#871bfbdf6fa1b36ba3e173993f4c9f13df88aa9a"
+emoji-mart-vue-fast@^9.1.2:
+  version "9.1.2"
+  resolved "https://registry.yarnpkg.com/emoji-mart-vue-fast/-/emoji-mart-vue-fast-9.1.2.tgz#0af4e95c312a166f49873fc5190e5002dd5aef13"
+  integrity sha512-9kSs4RPaUICKIavOT5Jdj67X/JpIato+fktCRMkskEkSZ1s+uEdjr+7tnwxbkHKxxczG1gqUpxk6tYVFgeFY8A==
   dependencies:
     "@babel/polyfill" "7.2.5"
     "@babel/runtime" "7.3.4"
@@ -7968,6 +7983,11 @@ mz@^2.4.0:
 nan@^2.12.1, nan@^2.13.2:
   version "2.14.2"
   resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.2.tgz"
+  integrity sha512-M2ufzIiINKCuDfBSAUr1vWQ+vuVcA9kqx8JJUsbQi6yf1uGRyb7HfpdfUr5qLXf3B/t8dPvcjhKMmlfnP47EzQ==
+
+nan@latest:
+  version "2.14.2"
+  resolved "https://registry.yarnpkg.com/nan/-/nan-2.14.2.tgz#f5376400695168f4cc694ac9393d0c9585eeea19"
   integrity sha512-M2ufzIiINKCuDfBSAUr1vWQ+vuVcA9kqx8JJUsbQi6yf1uGRyb7HfpdfUr5qLXf3B/t8dPvcjhKMmlfnP47EzQ==
 
 nanoid@^3.1.20:
