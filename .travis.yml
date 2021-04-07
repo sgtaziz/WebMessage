@@ -17,6 +17,19 @@ matrix:
           - $HOME/.cache/electron-builder
       before_cache:
         - rm -rf $HOME/.cache/electron-builder/wine
+      script:
+        - |
+          export CERTIFICATE_P12=cert.p12;
+          echo $MACOS_CERT_P12 | base64 --decode > $CERTIFICATE_P12;
+          export KEYCHAIN=build.keychain;
+          security create-keychain -p travis $KEYCHAIN;
+          security default-keychain -s $KEYCHAIN;
+          security unlock-keychain -p travis $KEYCHAIN;
+          security import $CERTIFICATE_P12 -k $KEYCHAIN -P $MACOS_CERT_PASSWORD -T /usr/bin/codesign 2>&1 >/dev/null;
+          rm $CERTIFICATE_P12;
+          security set-key-partition-list -S apple-tool:,apple: -s -k travis $KEYCHAIN 2>&1 >/dev/null;
+          yarn run generate-icons;
+          yarn run build -ml -p always;
     - os: windows
       language: node_js
       node_js: "14"
@@ -29,26 +42,10 @@ matrix:
           - $HOME/AppData/Local/Yarn/Cache
           - $HOME/AppData/Local/electron/Cache
           - $HOME/AppData/Local/electron-builder/Cache
-
-
-script:
-  - |
-    if [ "$TRAVIS_OS_NAME" = "osx" ]; then 
-      export CERTIFICATE_P12=cert.p12;
-      echo $MACOS_CERT_P12 | base64 --decode > $CERTIFICATE_P12;
-      export KEYCHAIN=build.keychain;
-      security create-keychain -p travis $KEYCHAIN;
-      security default-keychain -s $KEYCHAIN;
-      security unlock-keychain -p travis $KEYCHAIN;
-      security import $CERTIFICATE_P12 -k $KEYCHAIN -P $MACOS_CERT_PASSWORD -T /usr/bin/codesign 2>&1 >/dev/null;
-      rm $CERTIFICATE_P12;
-      security set-key-partition-list -S apple-tool:,apple: -s -k travis $KEYCHAIN 2>&1 >/dev/null;
-      yarn run generate-icons;
-      yarn run build -ml -p always;
-    else
-      yarn run generate-icons;
-      yarn run build -w -p always;
-    fi
+      script:
+        - |
+          yarn run generate-icons;
+          yarn run build -w -p always;
   
 branches:
   except:
