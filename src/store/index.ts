@@ -25,6 +25,7 @@ export default createStore({
     mutedChats: persistentStore.get('mutedChats', []) as string[],
     notifSound: persistentStore.get('notifSound', 'wm-audio://receivedText.mp3') as string,
     emojiSet: persistentStore.get('emojiSet', 'Twitter') as string,
+    privacyMode: persistentStore.get('privacyMode', false) as boolean,
     isTyping: [] as boolean[],
     isTypingTimer: [] as NodeJS.Timeout[],
   },
@@ -90,6 +91,10 @@ export default createStore({
     setEmojiSet(state, emojiSet) {
       state['emojiSet'] = emojiSet
       persistentStore.set('emojiSet', emojiSet)
+    },
+    setPrivacyMode(state, privacyMode) {
+      state['privacyMode'] = privacyMode
+      persistentStore.set('privacyMode', privacyMode)
     },
     setCacheMessages(state, cacheMessages) {
       state['cacheMessages'] = cacheMessages

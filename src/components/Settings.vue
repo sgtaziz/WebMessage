@@ -142,6 +142,13 @@
                 Enable hardware acceleration
               </div>
             </label>
+            <label class="switch">
+              <input type="checkbox" v-model="privacyMode" />
+              <i></i>
+              <div>
+                Enable privacy mode
+              </div>
+            </label>
             <label class="file">
               <div>
                 Select custom notification file:
@@ -210,6 +217,7 @@ export default {
       cacheMessages: false,
       notifSound: 'wm-audio://receivedText.mp3',
       emojiSet: 'Twitter',
+      privacyMode: false,
       activeView: 'tweak',
     }
   },
@@ -308,6 +316,7 @@ export default {
       this.$store.commit('setCacheMessages', this.cacheMessages)
       this.$store.commit('setNotifSound', this.notifSound)
       this.$store.commit('setEmojiSet', this.emojiSet)
+      this.$store.commit('setPrivacyMode', this.privacyMode)
       this.show = false
       if (this.enableTunnel) {
         this.initTunnel()
@@ -340,6 +349,7 @@ export default {
       this.cacheMessages = this.$store.state.cacheMessages
       this.notifSound = this.$store.state.notifSound
       this.emojiSet = this.$store.state.emojiSet
+      this.privacyMode = this.$store.state.privacyMode
       if (this.enableTunnel) {
         this.initTunnel()
       }

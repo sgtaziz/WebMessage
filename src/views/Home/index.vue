@@ -4,6 +4,7 @@
     :class="{
       nostyle: !($store.state.macstyle || window.process.platform === 'darwin'),
       maximized: (window.state.maximized || !$store.state.acceleration) && window.process.platform !== 'darwin',
+      privacy: $store.state.privacyMode,
     }"
   >
     <settings ref="settingsModal" @saved="chats.connectWS"></settings>
@@ -273,6 +274,71 @@ body {
       right: 0;
       top: 0;
       border-radius: 0;
+    }
+  }
+
+  &.privacy {
+    #nav {
+      .chats {
+        .chatContainer {
+          img:not(.avatar) {
+            display: none;
+          }
+          .chatWrapper {
+            .avatarContainer .vue-avatar--wrapper {
+              img {
+                display: none;
+              }
+            }
+            .chatContent {
+              .title {
+                .author {
+                  background: #ebecec;
+                  color: #ebecec;
+                }
+              }
+
+              .text {
+                background: #9d9d9d;
+                color: #9d9d9d;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    #content {
+      .messageContainer {
+        .titlebar {
+          .receiverContainer {
+            .contact {
+              background: #ebecec;
+            }
+          }
+          img {
+            display: none;
+          }
+        }
+        .messages {
+          .authorAvatar,
+          .senderName {
+            display: none;
+          }
+          .attachment {
+            filter: invert(0.5);
+            overflow: hidden;
+          }
+          .message,
+          .URLSubtitle {
+            color: rgba(0, 0, 0, 0);
+
+            img {
+              display: none;
+            }
+          }
+        }
+      }
     }
   }
 }
