@@ -100,16 +100,24 @@ const sendNotifierNotification = (options: NotificationOptions, messageData: { a
           withFallback: true,
           customPath: path.join(
             __dirname,
-            '../terminal-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier'
+            '../terminal-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier',
           ),
         })
       } else if (process.platform == 'win32') {
         sendPowertoastNotification(options, messageData)
         return
+      } else if (process.platform == 'linux') {
+        // console.log('notify-send ' + '-i ' + options.icon + ' "' + options.title + '" "' + options.message + '"')
+        const exec = require('child_process').exec
+        exec('notify-send ' + '-i ' + options.icon + ' "' + options.title + '" "' + options.message + '"', console.log)
+        return
       }
 
       notifier.notify(options, (err: string, action: string) => {
-        if (err) return
+        if (err) {
+          console.log(err)
+          return
+        }
         if ((action == 'activate' || action == 'click') && messageData && messageData.personId) {
           ipcRenderer.send('show_win')
           router?.push('/chat/' + messageData.personId)
