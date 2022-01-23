@@ -114,10 +114,7 @@ const sendNotifierNotification = (options: NotificationOptions, messageData: { a
       }
 
       notifier.notify(options, (err: string, action: string) => {
-        if (err) {
-          console.log(err)
-          return
-        }
+        if (err) return
         if ((action == 'activate' || action == 'click') && messageData && messageData.personId) {
           ipcRenderer.send('show_win')
           router?.push('/chat/' + messageData.personId)
