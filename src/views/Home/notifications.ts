@@ -41,6 +41,20 @@ const sendPowertoastNotification = (options: NotificationOptions, messageData: {
   })
 }
 
+const sendElectronNotification = (options: NotificationOptions, messageData: { authorDocid: string; personId: string }) => {
+  const noti = new remote.Notification({
+    title: options.title,
+    body: options.message,
+    icon: options.icon || '',
+  })
+  noti.show()
+  noti.on('click', () => {
+    console.log('clicked on message from ' + messageData.personId)
+    remote.getCurrentWindow().show()
+    remote.getCurrentWindow().loadURL('webmessage:' + messageData.personId)
+  })
+}
+
 const downloadImage = async (url: string, imagePath: string) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -100,16 +114,17 @@ const sendNotifierNotification = (options: NotificationOptions, messageData: { a
           withFallback: true,
           customPath: path.join(
             __dirname,
-            '../terminal-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier',
+            '../terminal-notifier/vendor/mac.noindex/terminal-notifier.app/Contents/MacOS/terminal-notifier'
           ),
         })
       } else if (process.platform == 'win32') {
         sendPowertoastNotification(options, messageData)
         return
       } else if (process.platform == 'linux') {
-        // console.log('notify-send ' + '-i ' + options.icon + ' "' + options.title + '" "' + options.message + '"')
-        const exec = require('child_process').exec
-        exec('notify-send ' + '-i ' + options.icon + ' "' + options.title + '" "' + options.message + '"', console.log)
+        sendElectronNotification(options, messageData)
+        return
+      } else if (remote.Notification.isSupported()) {
+        sendElectronNotification(options, messageData)
         return
       }
 
