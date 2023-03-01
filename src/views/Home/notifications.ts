@@ -41,6 +41,20 @@ const sendPowertoastNotification = (options: NotificationOptions, messageData: {
   })
 }
 
+const sendElectronNotification = (options: NotificationOptions, messageData: { authorDocid: string; personId: string }) => {
+  const noti = new remote.Notification({
+    title: options.title,
+    body: options.message,
+    icon: options.icon || '',
+  })
+  noti.show()
+  noti.on('click', () => {
+    console.log('clicked on message from ' + messageData.personId)
+    remote.getCurrentWindow().show()
+    remote.getCurrentWindow().loadURL('webmessage:' + messageData.personId)
+  })
+}
+
 const downloadImage = async (url: string, imagePath: string) => {
   return new Promise((resolve, reject) => {
     axios({
@@ -105,6 +119,12 @@ const sendNotifierNotification = (options: NotificationOptions, messageData: { a
         })
       } else if (process.platform == 'win32') {
         sendPowertoastNotification(options, messageData)
+        return
+      } else if (process.platform == 'linux') {
+        sendElectronNotification(options, messageData)
+        return
+      } else if (remote.Notification.isSupported()) {
+        sendElectronNotification(options, messageData)
         return
       }
 

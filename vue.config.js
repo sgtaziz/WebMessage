@@ -39,6 +39,9 @@ module.exports = {
         mac: {
           icon: 'build/icons/icon.icns',
         },
+        linux: {
+          icon: 'build/icons/icon.png',
+        },
         extraFiles: [
           {
             from: 'node_modules/node-notifier/vendor/',
