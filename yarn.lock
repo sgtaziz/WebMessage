@@ -1558,7 +1558,7 @@
   dependencies:
     defer-to-connect "^2.0.0"
 
-"@techassi/vue-lazy-image@^1.0.0":
+"@techassi/vue-lazy-image@^1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@techassi/vue-lazy-image/-/vue-lazy-image-1.0.1.tgz#8f4e6e3df9ce04b04a1208037b7d7850a68c72a9"
   integrity sha512-YC6UQfRmfHsM08rrfXerpCdkmoDl9mUp+XCuRVo+t05GO+GmF+9/2Fm5sBiy/kFgESCL5L7hqb5uhY11DEY/Nw==
@@ -11851,10 +11851,10 @@ typedarray@^0.0.6:
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
   integrity sha512-/aCDEGatGvZ2BIk+HmLf4ifCJFwvKFNb9/JeZPMulfgFracn9QFcAf5GO8B/mweUjSoblS5In0cWhqpfs/5PQA==
 
-typescript@~3.9.3:
-  version "3.9.10"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.10.tgz#70f3910ac7a51ed6bef79da7800690b19bf778b8"
-  integrity sha512-w6fIxVE/H1PkLKcCPsFqKE7Kv7QUwhU8qQY2MueZXWx5cPZdwFupLgKK3vntcK98BtNHZtAF4LA/yl2a7k8R6Q==
+typescript@~4.3.5:
+  version "4.3.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.3.5.tgz#4d1c37cc16e893973c45a06886b7113234f119f4"
+  integrity sha512-DqQgihaQ9cUrskJo9kIyW/+g0Vxsk8cDtZ52a3NGh0YNTfpUSArXSohyUGnvbPazEPLu398C0UxmKSOrPumUzA==
 
 uglify-js@3.4.x:
   version "3.4.10"

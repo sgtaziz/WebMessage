@@ -12,10 +12,10 @@ import linkify from 'vue-linkify'
 import jQuery from 'jquery'
 // import * as VueConfirmDialog from 'vue-confirm-dialog'
 import { longClickDirective } from 'vue-long-click'
-import { library } from '@fortawesome/fontawesome-svg-core'
+import { IconDefinition, library } from '@fortawesome/fontawesome-svg-core'
 import { faHeart, faThumbsUp, faThumbsDown, faLaughSquint, faExclamation, faQuestion } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon, FontAwesomeLayers } from '@fortawesome/vue-fontawesome'
-import VueLazyImage from '@techassi/vue-lazy-image'
+import VueLazyImage from './components/@techassi/vue-lazy-image'
 
 declare global {
   interface Window {
@@ -40,12 +40,12 @@ app.use(VueNativeSock, 'ws://', {
 // app.use(VueConfirmDialog)
 app.use(VueLazyImage)
 
-library.add(faHeart)
-library.add(faThumbsUp)
-library.add(faThumbsDown)
-library.add(faLaughSquint)
-library.add(faExclamation)
-library.add(faQuestion)
+library.add(faHeart as IconDefinition)
+library.add(faThumbsUp as IconDefinition)
+library.add(faThumbsDown as IconDefinition)
+library.add(faLaughSquint as IconDefinition)
+library.add(faExclamation as IconDefinition)
+library.add(faQuestion as IconDefinition)
 
 app.component('font-awesome-icon', FontAwesomeIcon)
 app.component('font-awesome-layers', FontAwesomeLayers)
