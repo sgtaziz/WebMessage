@@ -68,8 +68,8 @@ async function loadURL() {
 async function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({
-    width: 1700,
-    height: 800,
+    width: 700,
+    height: 600,
     minWidth: 700,
     minHeight: 600,
     transparent:
