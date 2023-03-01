@@ -22,7 +22,7 @@
     "@fortawesome/fontawesome-svg-core": "^1.2.34",
     "@fortawesome/free-solid-svg-icons": "^5.15.2",
     "@fortawesome/vue-fontawesome": "^3.0.0-3",
-    "@techassi/vue-lazy-image": "^1.0.0",
+    "@techassi/vue-lazy-image": "^1.0.1",
     "auto-launch": "^5.0.5",
     "axios": "^0.21.1",
     "bplist-parser": "^0.3.0",

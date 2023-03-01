@@ -1385,10 +1385,10 @@
   dependencies:
     defer-to-connect "^1.0.1"
 
-"@techassi/vue-lazy-image@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.npmjs.org/@techassi/vue-lazy-image/-/vue-lazy-image-1.0.0.tgz"
-  integrity sha512-QV/WhFG7tkHQi1egud8PSzAFhKmYwfXPaidMOgtkGrMvtbJwo/UBmvuqO9pIOiU+TgBEvL50x7wJQQpOMeXOEQ==
+"@techassi/vue-lazy-image@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@techassi/vue-lazy-image/-/vue-lazy-image-1.0.1.tgz#8f4e6e3df9ce04b04a1208037b7d7850a68c72a9"
+  integrity sha512-YC6UQfRmfHsM08rrfXerpCdkmoDl9mUp+XCuRVo+t05GO+GmF+9/2Fm5sBiy/kFgESCL5L7hqb5uhY11DEY/Nw==
   dependencies:
     vue "^3.0.0"
 

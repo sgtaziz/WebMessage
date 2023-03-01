@@ -239,7 +239,7 @@ app.on('ready', async () => {
         id: 'ljjemllljcmogpfapbkkighbhhppjdbg', //Vue Devtools beta
         electron: '>=1.2.1',
       })
-    } catch (e) {
+    } catch (e: any) {
       console.error('Vue Devtools failed to install:', e.toString())
     }
   }
@@ -351,15 +351,16 @@ function registerLocalFileProtocols() {
     }
   })
 
-  app.removeAsDefaultProtocolClient('webmessage')
-
   // If we are running a non-packaged version of the app && on windows
   if (isDevelopment && process.platform === 'win32') {
     // Set the path of electron.exe and your app.
     // These two additional parameters are only available on windows.
+    app.removeAsDefaultProtocolClient('webmessage')
     app.setAsDefaultProtocolClient('webmessage', process.execPath, [path.resolve(process.argv[1])])
   } else {
-    app.setAsDefaultProtocolClient('webmessage')
+    if (!app.isDefaultProtocolClient('webmessage')) {
+      app.setAsDefaultProtocolClient('webmessage')
+    }
   }
 }
 
