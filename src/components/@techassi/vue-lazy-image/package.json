@@ -1,0 +1,45 @@
+{
+    "name": "@techassi/vue-lazy-image",
+    "version": "1.0.0",
+    "description": "This plugin lets you lazy load images making use of IntersectionObserver",
+    "main": "lib/vue-lazy-image.umd.js",
+    "module": "lib/vue-lazy-image.esm.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "rollup -c rollup.config.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Techassi/vue-lazy-image.git"
+    },
+    "files": [
+        "/lib"
+    ],
+    "keywords": [
+        "vue",
+        "vuejs",
+        "vue3",
+        "lazyload",
+        "image",
+        "picture"
+    ],
+    "author": "Techassi",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/Techassi/vue-lazy-image/issues"
+    },
+    "homepage": "https://github.com/Techassi/vue-lazy-image#readme",
+    "dependencies": {
+        "vue": "^3.0.0"
+    },
+    "devDependencies": {
+        "eslint": "^7.10.0",
+        "eslint-config-airbnb-base": "^14.2.0",
+        "eslint-config-prettier": "^6.12.0",
+        "eslint-plugin-import": "^2.22.1",
+        "eslint-plugin-prettier": "^3.1.4",
+        "eslint-plugin-vue": "^7.0.1",
+        "prettier": "^2.1.2",
+        "rollup": "^2.28.2"
+    }
+}
