@@ -10,7 +10,9 @@ import Store from 'electron-store'
 import localShortcut from 'electron-localshortcut'
 import AutoLaunch from 'auto-launch'
 import axios from 'axios'
+import * as remoteMain from '@electron/remote/main'
 
+remoteMain.initialize()
 const isDevelopment = process.env.NODE_ENV !== 'production'
 const persistentStore = new Store()
 const autoLauncher = new AutoLaunch({
@@ -84,11 +86,13 @@ async function createWindow() {
       // Use pluginOptions.nodeIntegration, leave this alone
       // See nklayman.github.io/vue-cli-plugin-electron-builder/guide/security.html#node-integration for more info
       nodeIntegration: (process.env.ELECTRON_NODE_INTEGRATION as unknown) as boolean,
-      enableRemoteModule: true,
+      contextIsolation: false,
       devTools: isDevelopment && !process.env.IS_TEST,
       spellcheck: true,
     },
   })
+
+  remoteMain.enable(win.webContents)
 
   if (process.platform !== 'darwin') {
     win.removeMenu()

@@ -39,7 +39,7 @@
 </template>
 
 <script>
-import { remote } from 'electron'
+import * as remote from '@electron/remote'
 
 export default {
   name: 'PayloadAttachment',

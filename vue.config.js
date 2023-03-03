@@ -2,6 +2,9 @@ module.exports = {
   productionSourceMap: true,
   configureWebpack: {
     target: 'electron-renderer',
+    experiments: {
+      topLevelAwait: true,
+    },
     node: {
       __filename: true,
       __dirname: true,

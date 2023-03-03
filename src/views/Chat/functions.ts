@@ -1,4 +1,5 @@
-import { ipcRenderer, remote } from 'electron'
+import { ipcRenderer } from 'electron'
+import * as remote from '@electron/remote'
 import emojiRegex from 'emoji-regex'
 import { nextTick, onMounted, getCurrentInstance, reactive, ComponentInternalInstance, watch } from 'vue'
 import { RouteLocationNormalizedLoaded, useRoute } from 'vue-router'

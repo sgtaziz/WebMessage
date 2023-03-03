@@ -2,7 +2,8 @@ import { reactive, computed, onMounted, onBeforeUnmount } from 'vue'
 
 import { Router, useRouter } from 'vue-router'
 import { Store, useStore } from 'vuex'
-import { BrowserWindow, ipcRenderer, remote } from 'electron'
+import { BrowserWindow, ipcRenderer } from 'electron'
+import * as remote from '@electron/remote'
 import { state as chatsState } from './chats'
 
 let router: Nullable<Router> = null

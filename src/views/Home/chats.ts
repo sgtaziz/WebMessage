@@ -3,7 +3,7 @@ import main from '@/main'
 
 import { RouteLocationNormalizedLoaded, Router, useRoute, useRouter } from 'vue-router'
 import { Store, useStore } from 'vuex'
-import { remote } from 'electron'
+import * as remote from '@electron/remote'
 import { state as windowState } from './window'
 import { state as notificationsState, sendNotifierNotification } from './notifications'
 
@@ -419,7 +419,7 @@ export default () => {
     state.offset = 0
     state.loading = false
     state.search = ''
-    connectWS()
+    setTimeout(connectWS, 500)
   }
 
   init()
