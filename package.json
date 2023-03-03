@@ -17,7 +17,6 @@
     "type": "git",
     "url": "https://github.com/sgtaziz/WebMessage.git"
   },
-  "main": "background.js",
   "dependencies": {
     "@electron/remote": "^2.0.9",
     "@fortawesome/fontawesome-svg-core": "^6.3.0",
