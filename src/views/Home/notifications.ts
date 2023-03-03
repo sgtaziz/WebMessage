@@ -49,7 +49,7 @@ const sendElectronNotification = (options: NotificationOptions, messageData: { a
   })
   noti.show()
   noti.on('click', () => {
-    console.log('clicked on message from ' + messageData.personId)
+    // console.log('clicked on message from ' + messageData.personId)
     remote.getCurrentWindow().show()
     remote.getCurrentWindow().loadURL('webmessage:' + messageData.personId)
   })
