@@ -33,10 +33,15 @@ matrix:
     - os: windows
       language: node_js
       node_js: "18"
+      python: "3.8"
       env:
         - ELECTRON_CACHE=$HOME/AppData/Local/electron/Cache
         - ELECTRON_BUILDER_CACHE=$HOME/AppData/Local/electron-builder/Cache
         - YARN_GPG=no
+      before_install: 
+        - |
+          curl -o python-3.10.10.exe https://www.python.org/ftp/python/3.10.10/python-3.10.10-amd64.exe
+          python-3.10.10.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0
       cache:
         directories:
           - node_modules
