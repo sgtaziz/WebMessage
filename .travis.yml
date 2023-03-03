@@ -33,15 +33,18 @@ matrix:
     - os: windows
       language: node_js
       node_js: "18"
-      python: "3.8"
       env:
         - ELECTRON_CACHE=$HOME/AppData/Local/electron/Cache
         - ELECTRON_BUILDER_CACHE=$HOME/AppData/Local/electron-builder/Cache
         - YARN_GPG=no
       before_install: 
-        - |
-          curl -o python-3.10.10.exe https://www.python.org/ftp/python/3.10.10/python-3.10.10-amd64.exe;
-          python-3.10.10.exe /quiet InstallAllUsers=0 PrependPath=1 Include_test=0;
+        - powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;"
+        - powershell -Command "Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.9.10/python-3.9.10-amd64.exe' -OutFile 'python.exe';"
+        - powershell -Command "Start-Process C:\Users\travis\build\sgtaziz\WebMessage\python.exe -Wait -NoNewWindow -ArgumentList '/quiet InstallAllUsers=1 TargetDir=C:\Python39 PrependPath=1 Shortcuts=0 Include_doc=0 Include_test=0'"
+        - powershell -Command "Write-Host '  C:\Python39\python.exe --version'; C:\Python39\python.exe --version;"
+        - export PYTHON="C:\Python39\python.exe"
+        - export PATH=$PATH:"C:\Python39\":"C:\Python39\Scripts\"
+        - powershell -Command "Remove-Item python.exe -Force;"
       cache:
         directories:
           - node_modules
